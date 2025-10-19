@@ -9,8 +9,8 @@
     "build": "tsc",
     "dev": "ts-node src/index.ts",
     "start": "node dist/index.js",
-    "start:dev": "ts-node src/index.ts \"$@\"",
-    "clean": "rm -rf dist",
+    "start:dev": "ts-node src/index.ts",
+    "clean": "rm -rf dist && rm -f out/*.png && rm -rf out",
     "prepublishOnly": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

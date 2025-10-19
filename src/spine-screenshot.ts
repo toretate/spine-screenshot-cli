@@ -83,7 +83,6 @@ export interface ExtractorOptions {
   height: number;
   scale: number;
   frame: number;
-  outputPath: string;
 }
 
 export class SpineExtractor {
@@ -101,7 +100,7 @@ export class SpineExtractor {
     this.ctx = this.canvas.getContext('2d');
   }
 
-  async extract(): Promise<void> {
+  async extract(): Promise<Buffer> {
     try {
       // ファイルの存在確認
       if (!fs.existsSync(this.options.atlasPath)) {
@@ -119,8 +118,8 @@ export class SpineExtractor {
       // Spine データの読み込みと描画
       await this.loadAndRenderSpine(this.options.atlasPath, this.options.skelPath);
 
-      // 画像として保存
-      await this.saveImage();
+      // 画像Bufferを返す
+      return await this.getImageBuffer();
 
     } catch (error) {
       throw new Error(`Failed to extract spine animation: ${error}`);
@@ -503,13 +502,39 @@ export class SpineExtractor {
       // Spineスタイルのマルチレイヤー描画
       await this.drawSpineLayers(gl, textures, atlasInfo, skelInfo);
       
-      // WebGLフレームバッファからピクセルデータを取得してPNG保存
-      await this.saveWebGLToPNG(gl);
+      // WebGLフレームバッファからピクセルデータを取得してCanvasに描画
+      await this.transferWebGLToCanvas(gl);
       
     } catch (error) {
       console.error('❌ Error in renderSpineWithHeadlessGL:', error);
       throw error;
     }
+  }
+  
+  private async transferWebGLToCanvas(gl: any): Promise<void> {
+    // WebGLフレームバッファからピクセルデータを取得
+    const pixels = new Uint8Array(this.options.width * this.options.height * 4);
+    gl.readPixels(0, 0, this.options.width, this.options.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    
+    // Canvas ImageDataを作成
+    const imageData = this.ctx.createImageData(this.options.width, this.options.height);
+    
+    // WebGLは下から上に読み取るため、Y軸を反転
+    for (let y = 0; y < this.options.height; y++) {
+      for (let x = 0; x < this.options.width; x++) {
+        const srcIndex = ((this.options.height - 1 - y) * this.options.width + x) * 4;
+        const dstIndex = (y * this.options.width + x) * 4;
+        
+        imageData.data[dstIndex] = pixels[srcIndex];       // R
+        imageData.data[dstIndex + 1] = pixels[srcIndex + 1]; // G
+        imageData.data[dstIndex + 2] = pixels[srcIndex + 2]; // B
+        imageData.data[dstIndex + 3] = pixels[srcIndex + 3]; // A
+      }
+    }
+    
+    // CanvasにImageDataを描画
+    this.ctx.putImageData(imageData, 0, 0);
+    console.log('✅ WebGL frame transferred to Canvas');
   }
   
   private async loadAtlasTextures(gl: any, atlasInfo: any): Promise<any[]> {
@@ -586,6 +611,37 @@ export class SpineExtractor {
   
   private async drawSpineLayers(gl: any, textures: any[], atlasInfo: any, skelInfo: any): Promise<void> {
     console.log('🎨 Drawing Spine-style layers...');
+    console.log(`📊 Textures available: ${textures.length}, Regions: ${atlasInfo.regions.length}`);
+    
+    // テクスチャがない場合はダミーを作成
+    if (textures.length === 0) {
+      console.log('⚠️  No textures found, creating dummy texture for testing...');
+      
+      // 100x100のカラフルなダミーテクスチャを作成
+      const dummyData = new Uint8Array(100 * 100 * 4);
+      for (let i = 0; i < 100 * 100; i++) {
+        const offset = i * 4;
+        dummyData[offset] = Math.floor(Math.random() * 255);     // R
+        dummyData[offset + 1] = Math.floor(Math.random() * 255); // G
+        dummyData[offset + 2] = Math.floor(Math.random() * 255); // B
+        dummyData[offset + 3] = 255; // A
+      }
+      
+      const dummyTexture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, dummyTexture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 100, 100, 0, gl.RGBA, gl.UNSIGNED_BYTE, dummyData);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      
+      textures.push({
+        texture: dummyTexture,
+        width: 100,
+        height: 100,
+        path: 'dummy'
+      });
+    }
     
     // Spine風のマルチパス描画
     const textureShaderSource = {
@@ -685,14 +741,21 @@ export class SpineExtractor {
         gl.uniform3f(tintLoc, layer.tint[0], layer.tint[1], layer.tint[2]);
         gl.uniform1f(brightnessLoc, layer.brightness);
         
-        // 四角形の頂点データ
+        // 四角形の頂点データ（画面サイズに合わせてスケール調整）
+        const scaleX = this.options.width / tex.width * 0.5; // 画面幅の50%に収まるように
+        const scaleY = this.options.height / tex.height * 0.5; // 画面高さの50%に収まるように
+        const scaledWidth = tex.width * scaleX;
+        const scaledHeight = tex.height * scaleY;
+        
         const vertices = new Float32Array([
           // position     texCoord   alpha
-          -tex.width/2, -tex.height/2,  0.0, 1.0,  layer.alpha,
-           tex.width/2, -tex.height/2,  1.0, 1.0,  layer.alpha,
-          -tex.width/2,  tex.height/2,  0.0, 0.0,  layer.alpha,
-           tex.width/2,  tex.height/2,  1.0, 0.0,  layer.alpha
+          -scaledWidth/2, -scaledHeight/2,  0.0, 1.0,  layer.alpha,
+           scaledWidth/2, -scaledHeight/2,  1.0, 1.0,  layer.alpha,
+          -scaledWidth/2,  scaledHeight/2,  0.0, 0.0,  layer.alpha,
+           scaledWidth/2,  scaledHeight/2,  1.0, 0.0,  layer.alpha
         ]);
+        
+        console.log(`🔍 Drawing layer ${layer.scale} at scale ${scaleX.toFixed(2)}x${scaleY.toFixed(2)}, size ${scaledWidth.toFixed(0)}x${scaledHeight.toFixed(0)}`);
         
         const buffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -889,9 +952,13 @@ export class SpineExtractor {
       
       // 画像ファイルを検出
       if (trimmedLine.match(/\.(png|jpg|jpeg)$/i)) {
-        currentImage = path.resolve(atlasDir, trimmedLine);
-        if (fs.existsSync(currentImage)) {
-          images.push(currentImage);
+        currentImage = trimmedLine; // 相対パスとして保存
+        const fullPath = path.resolve(atlasDir, trimmedLine);
+        if (fs.existsSync(fullPath)) {
+          images.push(trimmedLine); // 相対パスを配列に追加
+          console.log(`📋 Found atlas image: ${trimmedLine} -> ${fullPath}`);
+        } else {
+          console.warn(`⚠️  Atlas image not found: ${fullPath}`);
         }
       }
       // リージョン情報を解析
@@ -1442,8 +1509,7 @@ export class SpineExtractor {
     console.log('Fallback rendering applied');
   }
 
-  private async saveImage(): Promise<void> {
-    const buffer = await this.canvas.toBuffer('png');
-    fs.writeFileSync(this.options.outputPath, buffer);
+  private async getImageBuffer(): Promise<Buffer> {
+    return await this.canvas.toBuffer('png');
   }
 }
