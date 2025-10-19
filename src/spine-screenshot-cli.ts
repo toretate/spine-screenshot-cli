@@ -28,6 +28,7 @@ export function createCLI(): Command {
     .version('1.0.0')
     .requiredOption('--atlas <path>', 'Path to atlas file')
     .requiredOption('--skel <path>', 'Path to skel file')
+    .option('--info', 'Show atlas and skel information (skins, animations, etc.)')
     .option('--skin <name>', 'Skin name')
     .option('--anime <name>', 'Animation name')
     .option('--x <number>', 'X position for image display', '0')
@@ -37,8 +38,29 @@ export function createCLI(): Command {
     .option('--scale <number>', 'Scale factor', '1.0')
     .option('--frame <number>', 'Frame number to capture', '1')
     .option('-o, --output <dir>', 'Output directory', './out')
-    .action(async (options: CliOptions) => {
+    .action(async (options: CliOptions & { info?: boolean }) => {
       try {
+        // 情報表示モードの場合
+        if (options.info) {
+          console.log('📋 Analyzing Spine files...\n');
+          const extractor = new SpineExtractor({
+            atlasPath: options.atlas,
+            skelPath: options.skel,
+            skin: options.skin,
+            animation: options.anime,
+            x: parseInt(options.x?.toString() || '0'),
+            y: parseInt(options.y?.toString() || '0'),
+            width: parseInt(options.w?.toString() || '1000'),
+            height: parseInt(options.h?.toString() || '1000'),
+            scale: parseFloat(options.scale?.toString() || '1.0'),
+            frame: parseInt(options.frame?.toString() || '1')
+          });
+          
+          // 情報を取得して表示
+          await extractor.showInfo();
+          return;
+        }
+        
         const extractor = new SpineExtractor({
           atlasPath: options.atlas,
           skelPath: options.skel,

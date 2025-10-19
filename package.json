@@ -30,6 +30,8 @@
     "@esotericsoftware/spine-core": "github:EsotericSoftware/spine-runtimes#3.6",
     "commander": "^11.0.0",
     "gl": "^6.0.2",
-    "skia-canvas": "^3.0.8"
+    "jsdom": "^26.1.0",
+    "skia-canvas": "^3.0.8",
+    "three": "^0.180.0"
   }
 }
