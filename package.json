@@ -1,0 +1,32 @@
+{
+  "name": "spine-extractor",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "bin": {
+    "spine-extractor": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "Spine 2D atlas and skel file screenshot CLI tool",
+  "volta": {
+    "node": "25.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "commander": "^11.0.0",
+    "skia-canvas": "^1.0.2",
+    "@esotericsoftware/spine-core": "github:EsotericSoftware/spine-runtimes#3.6",
+    "@esotericsoftware/spine-canvas": "github:EsotericSoftware/spine-runtimes#3.6"
+  }
+}
