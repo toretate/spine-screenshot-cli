@@ -18,17 +18,18 @@
   "license": "ISC",
   "description": "Spine 2D atlas and skel file screenshot CLI tool",
   "volta": {
-    "node": "25.0.0"
+    "node": "18.20.8"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "typescript": "^5.0.0",
-    "ts-node": "^10.9.0"
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
   },
   "dependencies": {
-    "commander": "^11.0.0",
-    "skia-canvas": "^1.0.2",
+    "@esotericsoftware/spine-canvas": "github:EsotericSoftware/spine-runtimes#3.6",
     "@esotericsoftware/spine-core": "github:EsotericSoftware/spine-runtimes#3.6",
-    "@esotericsoftware/spine-canvas": "github:EsotericSoftware/spine-runtimes#3.6"
+    "commander": "^11.0.0",
+    "gl": "^6.0.2",
+    "skia-canvas": "^3.0.8"
   }
 }

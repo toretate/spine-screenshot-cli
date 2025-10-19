@@ -5,6 +5,7 @@ import { SpineExtractor } from './spine-extractor';
 
 interface CliOptions {
   atlas: string;
+  skel: string;
   skin?: string;
   anime?: string;
   x?: number;
@@ -23,6 +24,7 @@ program
   .description('Spine 2D atlas and skel file screenshot CLI tool')
   .version('1.0.0')
   .requiredOption('--atlas <path>', 'Path to atlas file')
+  .requiredOption('--skel <path>', 'Path to skel file')
   .option('--skin <name>', 'Skin name')
   .option('--anime <name>', 'Animation name')
   .option('--x <number>', 'X position for image display', '0')
@@ -36,6 +38,7 @@ program
     try {
       const extractor = new SpineExtractor({
         atlasPath: options.atlas,
+        skelPath: options.skel,
         skin: options.skin,
         animation: options.anime,
         x: parseInt(options.x?.toString() || '0'),
