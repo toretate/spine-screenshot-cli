@@ -2,177 +2,214 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Spine;
 using System.IO;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace SpineScreenshotCli;
 
 public class SpineRenderer
 {
-    public static void ShowFileInfo(Options options)
+    public static void RenderSpineScreenshot(Options options)
     {
-        try
+        if (!string.IsNullOrEmpty(options.Animation) && options.Animation.Equals("all", StringComparison.OrdinalIgnoreCase))
         {
-            Console.WriteLine("Spine File Information:");
-            Console.WriteLine($"Atlas: {options.AtlasPath}");
-            Console.WriteLine($"Skeleton: {options.SkeletonPath}");
-            
-            if (!string.IsNullOrEmpty(options.AtlasPath) && File.Exists(options.AtlasPath))
-            {
-                // Create a dummy graphics service just for loading
-                using var graphicsService = new HeadlessGraphicsService(256, 256);
-                var atlas = new Atlas(options.AtlasPath, new MonoGameTextureLoader(graphicsService.GraphicsDevice));
-                
-                Console.WriteLine($"Atlas loaded successfully");
-                
-                if (!string.IsNullOrEmpty(options.SkeletonPath) && File.Exists(options.SkeletonPath))
-                {
-                    var skeletonData = LoadSpineSkeletonData(options.SkeletonPath, atlas);
-                    Console.WriteLine($"Skeleton loaded:");
-                    Console.WriteLine($"  Skins: {string.Join(", ", skeletonData.Skins.Select(s => s.Name))}");
-                    Console.WriteLine($"  Animations: {string.Join(", ", skeletonData.Animations.Select(a => a.Name))}");
-                    Console.WriteLine($"  Bones: {skeletonData.Bones.Count}");
-                    Console.WriteLine($"  Slots: {skeletonData.Slots.Count}");
-                }
-                
-                atlas.Dispose();
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading file info: {ex.Message}");
+            // 全アニメーションを書き出す
+            Console.WriteLine("Rendering ALL animations...");
+            RenderAllAnimations(options);
+        } else {
+            // １アニメーションのみを書き出す
+            Console.WriteLine($"Rendering SINGLE animation: '{options.Animation}'");
+            RenderSingleAnimation(options, options.Animation);
         }
     }
 
-    public static void RenderSpineScreenshot(Options options)
+    ///
+    /// 全アニメーションを書き出す処理
+    /// 
+    private static void RenderAllAnimations(Options options)
     {
-        // Parse size
-        var sizeParts = options.Size.Split(',');
-        if (sizeParts.Length != 2 || !int.TryParse(sizeParts[0], out var width) || !int.TryParse(sizeParts[1], out var height))
-        {
-            throw new ArgumentException($"Invalid size format: {options.Size}. Expected format: width,height");
+        var info = SpineFileInfo.Load( options );
+        foreach ( var animation in info.animations ) {
+            Console.WriteLine($"Rendering animation: {animation.Name}");
+            RenderSingleAnimation(options, animation.Name);
         }
+        Console.WriteLine("All animations rendered successfully.");
+    }
 
-        // Parse position if provided
-        int skeletonX = width / 2;   // Default to center
-        int skeletonY = height / 2;  // Default to center
-        
-        if (!string.IsNullOrEmpty(options.Position))
-        {
-            var positionParts = options.Position.Split(',');
-            if (positionParts.Length == 2 && 
-                int.TryParse(positionParts[0].Trim(), out var x) && 
-                int.TryParse(positionParts[1].Trim(), out var y))
-            {
-                skeletonX = x;
-                skeletonY = y;
-            }
-            else
-            {
-                Console.WriteLine($"Warning: Invalid position format '{options.Position}'. Using center position.");
-            }
-        }
+    ///
+    /// 指定アニメーションのみを書き出す処理
+    /// 
+    private static void RenderSingleAnimation(Options options, string? animationName)
+    {
+        var renderingInfo = new RenderingInfo(options);
+        // Create headless graphics service for single animation rendering
+        using ( var graphicsService = new HeadlessGraphicsService(renderingInfo.Width, renderingInfo.Height) ) {
+            var graphicsDevice = graphicsService.GraphicsDevice;
 
-        // Parse background color if provided
-        Microsoft.Xna.Framework.Color backgroundColor = Microsoft.Xna.Framework.Color.Transparent;
-        if (!string.IsNullOrEmpty(options.BackgroundColor))
-        {
-            if (TryParseHexColor(options.BackgroundColor, out backgroundColor))
-            {
-                Console.WriteLine($"Using background color: {options.BackgroundColor}");
-            }
-            else
-            {
-                Console.WriteLine($"Warning: Invalid background color format '{options.BackgroundColor}'. Using transparent background.");
-                backgroundColor = Microsoft.Xna.Framework.Color.Transparent;
+            // Load Spine Atlas with MonoGame texture loader
+            var spineAtlas = null as Atlas;
+            try {
+                spineAtlas = new Atlas(options.AtlasPath!, new MonoGameTextureLoader(graphicsDevice));
+                var spineSkeletonData = SpineData.LoadSkeletonData(options.SkeletonPath!, spineAtlas);
+
+                RenderSingleAnimationWithGraphicsDevice(graphicsDevice, spineSkeletonData, animationName, options);
+            } finally {
+                spineAtlas?.Dispose();
             }
         }
-        
+    }
+
+    ///
+    /// GraphicsDevice に画像を書き込む
+    /// 
+    private static void RenderSingleAnimationWithGraphicsDevice(GraphicsDevice graphicsDevice, SkeletonData skeletonData, string? animationName, Options options)
+    {
+        var renderingInfo = new RenderingInfo(options);
+        int width = renderingInfo.Width;
+        int height = renderingInfo.Height;
+        int skeletonX = renderingInfo.X;
+        int skeletonY = renderingInfo.Y;
+        var backgroundColor = renderingInfo.BackgroundColor;
+
+        // Complete graphics device reset before each animation
+        graphicsDevice.SetRenderTarget(null);
+        graphicsDevice.Clear(Microsoft.Xna.Framework.Color.Black);
+
         Console.WriteLine($"Output Size: {width}x{height}");
         Console.WriteLine($"Skeleton Position: ({skeletonX}, {skeletonY})");
         Console.WriteLine($"Background Color: {backgroundColor}");
         Console.WriteLine($"UseAlpha: {options.UseAlpha}, PremultipliedAlpha: {options.PremultipliedAlpha}");
-
-        // When UseAlpha is enabled but background color is specified, ensure background is opaque
-        if (options.UseAlpha && !string.IsNullOrEmpty(options.BackgroundColor) && backgroundColor != Microsoft.Xna.Framework.Color.Transparent)
-        {
-            // Ensure background color has full alpha for proper rendering
-            backgroundColor = new Microsoft.Xna.Framework.Color((byte)backgroundColor.R, (byte)backgroundColor.G, (byte)backgroundColor.B, (byte)255);
-        }
-
-        // Create headless graphics service
-        using var graphicsService = new HeadlessGraphicsService(width, height);
-        var graphicsDevice = graphicsService.GraphicsDevice;
-
-        // Load Spine Atlas with MonoGame texture loader
-        var spineAtlas = new Atlas(options.AtlasPath!, new MonoGameTextureLoader(graphicsDevice));
-        
-        // Load skeleton data
-        SkeletonData spineSkeletonData = LoadSpineSkeletonData(options.SkeletonPath!, spineAtlas);
-        Console.WriteLine($"Loaded skeleton with {spineSkeletonData.Skins.Count} skins, {spineSkeletonData.Animations.Count} animations");
+        Console.WriteLine($"Loaded skeleton with {skeletonData.Skins.Count} skins, {skeletonData.Animations.Count} animations");
 
         // Create skeleton and animation state
-        var skeleton = new Skeleton(spineSkeletonData);
-        var animationStateData = new AnimationStateData(spineSkeletonData);
-        var animationState = new AnimationState(animationStateData);
-        
-        // Apply setup pose first
-        skeleton.SetToSetupPose();
+        var skeleton = new Skeleton(skeletonData);
+
+        // Apply setup pose first - this is critical for consistent rendering
         Console.WriteLine("Applied setup pose to skeleton");
 
-        // Set skin if specified
-        if (!string.IsNullOrEmpty(options.Skin))
-        {
-            var skin = spineSkeletonData.FindSkin(options.Skin);
-            if (skin != null)
-            {
-                skeleton.SetSkin(skin);
-                skeleton.SetSlotsToSetupPose();
-                Console.WriteLine($"Applied skin: {options.Skin}");
-            }
-            else
-            {
-                Console.WriteLine($"Warning: Skin '{options.Skin}' not found. Available skins: {string.Join(", ", spineSkeletonData.Skins.Select(s => s.Name))}");
-            }
-        }
+        // skeletonにskinとAnimationを設定する
+        SetSkinToSkeleton(options, skeletonData, skeleton);
+        SetAnimationToSkeleton( animationName, options, skeletonData, skeleton );
 
-        // Set animation if specified
-        if (!string.IsNullOrEmpty(options.Animation))
-        {
-            var animation = spineSkeletonData.FindAnimation(options.Animation);
-            if (animation != null)
-            {
-                animationState.SetAnimation(0, animation, false);
-                
-                // Apply frame timing if specified
-                if (options.Frame > 0)
-                {
-                    float frameTime = (options.Frame - 1) * (1.0f / 30.0f); // Assuming 30 FPS
-                    animationState.Update(frameTime);
-                    animationState.Apply(skeleton);
-                    Console.WriteLine($"Applied animation: {options.Animation} at frame {options.Frame} (time: {frameTime:F3}s)");
-                }
-            }
-            else
-            {
-                Console.WriteLine($"Warning: Animation '{options.Animation}' not found. Available animations: {string.Join(", ", spineSkeletonData.Animations.Select(a => a.Name))}");
-            }
-        }
-
-        // Update skeleton
-        skeleton.UpdateWorldTransform();
-
-        // Set up position  
+        // Set up position and ensure proper skeleton state
+        // Use MonoGame coordinate system (top-left origin)
         skeleton.X = skeletonX;
         skeleton.Y = skeletonY;
-        
+
+        skeleton.SetToSetupPose();
+        skeleton.SetSlotsToSetupPose();
+
+        // Ensure final world transform update after all changes
+        skeleton.UpdateWorldTransform();
+        Console.WriteLine($"Final skeleton state - Position: ({skeleton.X}, {skeleton.Y})");
+
         // Debug: Output skeleton information
         Console.WriteLine($"Skeleton position: ({skeleton.X}, {skeleton.Y})");
         Console.WriteLine($"Skeleton color: R={skeleton.R}, G={skeleton.G}, B={skeleton.B}, A={skeleton.A}");
         Console.WriteLine($"Canvas size: {width}x{height}, Position: ({skeletonX}, {skeletonY})");
         Console.WriteLine($"Skeleton draw order count: {skeleton.DrawOrder.Count}");
         
-        // Debug: Check visible slots and attachments
+        // スロットとアタッチメントをデバッグ表示
+        CheckVisibleSlotsAndAttachments(skeleton);
+
+        // Calculate and display skeleton bounds
+        var bounds = new SkeletonBounds();
+        try
+        {
+            bounds.Update(skeleton, true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Warning: Error calculating skeleton bounds: {ex.Message}");
+        }
+
+        // Create render target
+        using var renderTarget = new RenderTarget2D(graphicsDevice, width, height, false, SurfaceFormat.Color, DepthFormat.None);
+
+        // Configure alpha blending mode based on UseAlpha option
+        var blendState = options.UseAlpha 
+            ? (options.PremultipliedAlpha ? BlendState.AlphaBlend : BlendState.NonPremultiplied)
+            : BlendState.Opaque;
+
+        // Render with proper state management
+        try
+        {
+            // Reset graphics device state before rendering
+            graphicsDevice.SetRenderTarget(renderTarget);
+            graphicsDevice.Clear(backgroundColor);
+            
+            // Reset viewport to ensure proper rendering area
+            graphicsDevice.Viewport = new Viewport(0, 0, width, height);
+            
+            // Set all rendering states explicitly
+            graphicsDevice.BlendState = blendState;
+            graphicsDevice.RasterizerState = RasterizerState.CullNone;
+            graphicsDevice.DepthStencilState = DepthStencilState.None;
+            graphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
+            
+            Console.WriteLine($"Starting render for animation: {animationName}");
+            Console.WriteLine($"Viewport: {graphicsDevice.Viewport.Width}x{graphicsDevice.Viewport.Height}");
+            Console.WriteLine($"BlendState: {graphicsDevice.BlendState}");
+            
+            // Create a new spine renderer for each render to avoid state issues
+            var skeletonRenderer = new SkeletonRenderer(graphicsDevice);
+            skeletonRenderer.PremultipliedAlpha = options.PremultipliedAlpha;
+
+            // Configure BasicEffect projection matrix for proper coordinate mapping
+            if (skeletonRenderer.Effect is BasicEffect basicEffect)
+            {
+                // Use standard MonoGame coordinate system (top-left origin, Y down)
+                basicEffect.Projection = Matrix.CreateOrthographicOffCenter(0, width, height, 0, -1, 1);
+                basicEffect.View = Matrix.Identity;
+                basicEffect.World = Matrix.Identity;
+                Console.WriteLine($"Set projection matrix for {width}x{height} viewport (Spine coordinate system)");
+            }
+            
+            skeletonRenderer.Begin();
+            skeletonRenderer.Draw(skeleton);
+            skeletonRenderer.End();
+            
+            Console.WriteLine($"Completed render for animation: {animationName}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during rendering animation {animationName}: {ex.Message}");
+            Console.WriteLine($"Exception details: {ex}");
+            throw;
+        }
+
+        graphicsDevice.SetRenderTarget(null);
+
+        // Save render target
+        Console.WriteLine($"About to save render target. Size: {renderTarget.Width}x{renderTarget.Height}");
+        Console.WriteLine($"RenderTarget Format: {renderTarget.Format}");
+        Console.WriteLine($"RenderTarget Usage: {renderTarget.LevelCount}");
+
+        // レンダリング結果をチェック
+        {
+            var checkData = new Microsoft.Xna.Framework.Color[100]; // 最初の100ピクセルをチェック
+            renderTarget.GetData(0, new Microsoft.Xna.Framework.Rectangle(0, 0, 10, 10), checkData, 0, 100);
+            var nonTransparentCount = checkData.Count(c => c.A > 0);
+            Console.WriteLine($"Sample check: {nonTransparentCount}/100 pixels are non-transparent");
+        }
+
+        // ファイル書き込み
+        SpineData.ImageFormat imageFormat = RenderingInfo.GetImageFormat( options );
+        string outputPath = RenderingInfo.OutputFilePath( options, animationName, skeletonData, width, height );
+        SpineData.SaveRenderTarget(renderTarget, outputPath, imageFormat);
+        Console.WriteLine($"Screenshot saved: {outputPath}");
+
+        // Reset graphics device state after rendering to prevent interference
+        graphicsDevice.SetRenderTarget(null);
+        graphicsDevice.Clear(Microsoft.Xna.Framework.Color.Black);
+        
+        // Cleanup - render target is disposed automatically by using statement
+        // Do not dispose shared atlas - it will be disposed by the caller
+        // SkeletonRenderer doesn't require explicit disposal in this version
+        Console.WriteLine($"Completed processing animation: {animationName}");
+    }
+
+
+    /// Debug: Check visible slots and attachments  
+    private static void CheckVisibleSlotsAndAttachments(Skeleton skeleton) {
         int visibleSlots = 0;
         for (int i = 0; i < skeleton.DrawOrder.Count; i++)
         {
@@ -192,178 +229,68 @@ public class SpineRenderer
             }
         }
         Console.WriteLine($"Total visible slots: {visibleSlots}");
-        
-        // Calculate and display skeleton bounds
-        skeleton.UpdateWorldTransform();
-        var bounds = new SkeletonBounds();
-        bounds.Update(skeleton, true);
-        Console.WriteLine($"Skeleton bounds: MinX={bounds.MinX}, MinY={bounds.MinY}, Width={bounds.Width}, Height={bounds.Height}");
-
-        // Create render target
-        var renderTarget = new RenderTarget2D(graphicsDevice, width, height, false, SurfaceFormat.Color, DepthFormat.None);
-
-        // Create spine renderer
-        var skeletonRenderer = new SkeletonRenderer(graphicsDevice);
-        skeletonRenderer.PremultipliedAlpha = options.PremultipliedAlpha;
-        
-        // Configure BasicEffect projection matrix for proper coordinate mapping
-        // Use Spine coordinate system (left-bottom origin) instead of MonoGame (left-top origin)
-        if (skeletonRenderer.Effect is BasicEffect basicEffect)
-        {
-            basicEffect.Projection = Matrix.CreateOrthographicOffCenter(0, width, 0, height, 0, 1);
-            Console.WriteLine($"Set projection matrix for {width}x{height} viewport (Spine coordinate system)");
-        }
-
-        // Configure alpha blending mode based on UseAlpha option
-        var blendState = options.UseAlpha 
-            ? (options.PremultipliedAlpha ? BlendState.AlphaBlend : BlendState.NonPremultiplied)
-            : BlendState.Opaque;
-
-        // Render
-        graphicsDevice.SetRenderTarget(renderTarget);
-        graphicsDevice.Clear(backgroundColor);
-        
-        // Set blend state explicitly before rendering
-        graphicsDevice.BlendState = blendState;
-        
-        skeletonRenderer.Begin();
-        skeletonRenderer.Draw(skeleton);
-        skeletonRenderer.End();
-
-        // Save to file
-        graphicsDevice.SetRenderTarget(null);
-        
-        // Create output filename
-        string fileName = CreateOutputFileName(options, spineSkeletonData, width, height);
-        string outputPath = Path.Combine(options.OutputDir!, fileName);
-        
-        // Save render target to PNG
-        SaveRenderTargetToPng(renderTarget, outputPath);
-        
-        Console.WriteLine($"Screenshot saved: {outputPath}");
-
-        // Cleanup
-        renderTarget.Dispose();
-        spineAtlas.Dispose();
     }
 
-    private static SkeletonData LoadSpineSkeletonData(string skeletonPath, Atlas atlas)
-    {
-        string extension = Path.GetExtension(skeletonPath).ToLower();
-        
-        if (extension == ".json")
-        {
-            var json = new SkeletonJson(atlas);
-            return json.ReadSkeletonData(skeletonPath);
-        }
-        else if (extension == ".skel")
-        {
-            var binary = new SkeletonBinary(atlas);
-            return binary.ReadSkeletonData(skeletonPath);
-        }
-        else
-        {
-            throw new ArgumentException($"Unsupported skeleton file format: {extension}");
-        }
-    }
-
-    private static string CreateOutputFileName(Options options, SkeletonData skeletonData, int width, int height)
-    {
-        var skeletonName = Path.GetFileNameWithoutExtension(options.SkeletonPath);
-        var skinName = options.Skin ?? "default";
-        var animName = options.Animation ?? "none";
-        var frame = options.Frame;
-        
-        // Count total regions/slots
-        int totalRegions = 0;
+    /// スケルトンにスキンを設定する
+    private static void SetSkinToSkeleton(Options options, SkeletonData skeletonData, Skeleton skeleton) {
         if (!string.IsNullOrEmpty(options.Skin))
         {
             var skin = skeletonData.FindSkin(options.Skin);
             if (skin != null)
             {
-                totalRegions = CountSkinAttachments(skin);
+                skeleton.SetSkin(skin);
+                skeleton.SetSlotsToSetupPose();
+                Console.WriteLine($"Applied skin: {options.Skin}");
+            }
+            else
+            {
+                Console.WriteLine($"Warning: Skin '{options.Skin}' not found. Available skins: {string.Join(", ", skeletonData.Skins.Select(s => s.Name))}");
             }
         }
-        
-        return $"{skeletonName}_skin-{skinName}_anim-{animName}_frame-{frame}_{width}x{height}_regions-{totalRegions}of0.png";
     }
 
-    private static int CountSkinAttachments(Skin skin)
-    {
-        int count = 0;
-        // Use the attachments field directly since GetAttachments() may not be available
-        var attachments = skin.Attachments;
-        if (attachments != null)
+    /// スケルトンにアニメーションを設定する
+    private static void SetAnimationToSkeleton( string animationName, Options options, SkeletonData skeletonData, Skeleton skeleton ) {
+        var animationStateData = new AnimationStateData(skeletonData);
+        var animationState = new AnimationState(animationStateData);
+
+        // 初期化
+        animationState.ClearTracks();
+        Console.WriteLine("Cleared animation tracks");
+
+        if (!string.IsNullOrEmpty(animationName))
         {
-            foreach (var entry in attachments)
+            var animation = skeletonData.FindAnimation(animationName);
+            if (animation != null)
             {
-                if (entry.Value is RegionAttachment || entry.Value is MeshAttachment)
+                // Set animation on track 0
+                animationState.SetAnimation(0, animation, false);
+                Console.WriteLine($"Set animation: {animationName}");
+                
+                // Apply frame timing if specified
+                if (options.Frame > 0)
                 {
-                    count++;
+                    float frameTime = (options.Frame - 1) * (1.0f / 30.0f); // Assuming 30 FPS
+                    animationState.Update(frameTime);
+                    animationState.Apply(skeleton);
+                    Console.WriteLine($"Applied animation: {animationName} at frame {options.Frame} (time: {frameTime:F3}s)");
                 }
+                else
+                {
+                    // If no specific frame, just apply the first frame of animation
+                    animationState.Update(0.0f);
+                    animationState.Apply(skeleton);
+                    Console.WriteLine($"Applied animation: {animationName} at first frame");
+                }
+                
+                // Update world transform after animation application
+                skeleton.UpdateWorldTransform();
+                Console.WriteLine($"Updated world transform for animation: {animationName}");
             }
-        }
-        return count;
-    }
-
-    private static void SaveRenderTargetToPng(RenderTarget2D renderTarget, string path)
-    {
-        // Get the data from render target
-        var data = new Microsoft.Xna.Framework.Color[renderTarget.Width * renderTarget.Height];
-        renderTarget.GetData(data);
-
-        // Create directory if it doesn't exist
-        var directory = Path.GetDirectoryName(path);
-        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        // Create ImageSharp image
-        using var image = new Image<Rgba32>(renderTarget.Width, renderTarget.Height);
-        
-        // Convert MonoGame color data to ImageSharp format
-        for (int y = 0; y < renderTarget.Height; y++)
-        {
-            for (int x = 0; x < renderTarget.Width; x++)
+            else
             {
-                int index = y * renderTarget.Width + x;
-                var color = data[index];
-                image[x, y] = new Rgba32(color.R, color.G, color.B, color.A);
+                Console.WriteLine($"Warning: Animation '{animationName}' not found. Available animations: {string.Join(", ", skeletonData.Animations.Select(a => a.Name))}");
             }
-        }
-
-        // Save as PNG
-        image.SaveAsPng(path);
-    }
-
-    private static bool TryParseHexColor(string hexColor, out Microsoft.Xna.Framework.Color color)
-    {
-        color = Microsoft.Xna.Framework.Color.Transparent;
-        
-        if (string.IsNullOrEmpty(hexColor))
-            return false;
-            
-        // Remove # if present
-        if (hexColor.StartsWith("#"))
-            hexColor = hexColor.Substring(1);
-            
-        // Must be exactly 6 characters for RRGGBB
-        if (hexColor.Length != 6)
-            return false;
-            
-        try
-        {
-            int r = Convert.ToInt32(hexColor.Substring(0, 2), 16);
-            int g = Convert.ToInt32(hexColor.Substring(2, 2), 16);
-            int b = Convert.ToInt32(hexColor.Substring(4, 2), 16);
-            
-            color = new Microsoft.Xna.Framework.Color((byte)r, (byte)g, (byte)b, (byte)255);
-            return true;
-        }
-        catch
-        {
-            return false;
         }
     }
 

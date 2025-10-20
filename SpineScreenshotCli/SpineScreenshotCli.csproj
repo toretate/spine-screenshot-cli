@@ -6,6 +6,22 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    
+    <!-- Release build settings -->
+    <AssemblyTitle>Spine Screenshot CLI</AssemblyTitle>
+    <AssemblyDescription>Command-line tool for capturing screenshots from Spine animations</AssemblyDescription>
+    <AssemblyCompany>toretate</AssemblyCompany>
+    <AssemblyProduct>spine-screenshot-cli</AssemblyProduct>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Copyright>Copyright © 2025</Copyright>
+    
+    <!-- Performance optimizations -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <!-- Disable aggressive trimming for compatibility -->
+    <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,12 +32,16 @@
 
   <ItemGroup>
     <Compile Include="*.cs" />
+    <Compile Include="src\**\*.cs" />
     <Compile Include="Spine\**\*.cs" />
-    <!-- Include spine-xna renderer files but exclude problematic debug renderer -->
+    <!-- Include spine-xna 3.6 renderer files -->
     <Compile Include="..\spine-runtimes\spine-xna\src\SkeletonRenderer.cs" LinkBase="SpineXna" />
     <Compile Include="..\spine-runtimes\spine-xna\src\MeshBatcher.cs" LinkBase="SpineXna" />
     <Compile Include="..\spine-runtimes\spine-xna\src\Util.cs" LinkBase="SpineXna" />
     <Compile Include="..\spine-runtimes\spine-xna\src\XnaTextureLoader.cs" LinkBase="SpineXna" />
+    <!-- Exclude debug renderer to avoid conflicts -->
+    <!-- <Compile Include="..\spine-runtimes\spine-xna\src\SkeletonDebugRenderer.cs" LinkBase="SpineXna" /> -->
+    <!-- <Compile Include="..\spine-runtimes\spine-xna\src\ShapeRenderer.cs" LinkBase="SpineXna" /> -->
   </ItemGroup>
 
 </Project>

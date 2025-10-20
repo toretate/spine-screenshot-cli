@@ -13,7 +13,7 @@ public class Options
     [Option("skin", Required = false, HelpText = "Skin name to render")]
     public string? Skin { get; set; }
 
-    [Option("animation", Required = false, HelpText = "Animation name to render")]
+    [Option("animation", Required = false, HelpText = "Animation name to render (use 'all' to render all animations)")]
     public string? Animation { get; set; }
 
     [Option("frame", Required = false, Default = 0, HelpText = "Frame number to capture (0-based)")]
@@ -28,8 +28,11 @@ public class Options
     [Option("scale", Required = false, Default = 1.0f, HelpText = "Scale factor")]
     public float Scale { get; set; }
 
-    [Option('o', "output", Required = false, HelpText = "Output directory (default: ./out)")]
+    [Option("out-dir", Required = false, HelpText = "Output directory (default: ./out)")]
     public string OutputDir { get; set; } = "./out";
+
+    [Option('o', "out", Required = false, HelpText = "Output filename (if not specified, auto-generated)")]
+    public string? OutputFileName { get; set; }
 
     [Option("info", Required = false, HelpText = "Show file information only (no rendering)")]
     public bool ShowInfo { get; set; }
@@ -42,4 +45,7 @@ public class Options
 
     [Option("background", Required = false, HelpText = "Background color in #RRGGBB format (default: transparent)")]
     public string? BackgroundColor { get; set; }
+
+    [Option("format", Required = false, Default = "png", HelpText = "Output format: png or webp (default: png)")]
+    public string Format { get; set; } = "png";
 }

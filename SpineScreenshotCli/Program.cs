@@ -33,7 +33,8 @@ class Program
         {
             if (options.ShowInfo)
             {
-                SpineRenderer.ShowFileInfo(options);
+                var info = SpineFileInfo.Load(options);
+                info.Show();
             }
             else
             {
