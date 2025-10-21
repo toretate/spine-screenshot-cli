@@ -14,6 +14,8 @@ public class RenderingInfo {
 
     public Microsoft.Xna.Framework.Color BackgroundColor { get; }
 
+    public bool PremultipliedAlpha { get; set; }
+
     public RenderingInfo( Options options ) {
         // サイズ指定
         var sizeParts = options.Size.Split(',');
@@ -26,15 +28,21 @@ public class RenderingInfo {
         this.Height = height;
 
         // 位置指定
-        var positionParts = options.Position.Split(',');
-        if (positionParts.Length != 2 || !int.TryParse(positionParts[0], out var x) || !int.TryParse(positionParts[1], out var y))
+        int x, y;
+        if (string.IsNullOrEmpty(options.Position))
         {
-            // 位置指定が不正な場合エラー
-            throw new ArgumentException($"Invalid position format: {options.Position}. Expected format: x,y");
-        } else {
             // 位置指定がない場合は中央
             x = width / 2;
             y = height / 2;
+        }
+        else
+        {
+            var positionParts = options.Position.Split(',');
+            if (positionParts.Length != 2 || !int.TryParse(positionParts[0], out x) || !int.TryParse(positionParts[1], out y))
+            {
+                // 位置指定が不正な場合はエラー
+                throw new ArgumentException($"Invalid position format: {options.Position}. Expected format: x,y");
+            }
         }
         this.X = x;
         this.Y = y;
@@ -59,6 +67,8 @@ public class RenderingInfo {
             backgroundColor = new Microsoft.Xna.Framework.Color((byte)backgroundColor.R, (byte)backgroundColor.G, (byte)backgroundColor.B, (byte)255);
         }
         this.BackgroundColor = backgroundColor;
+
+        this.PremultipliedAlpha = options.PremultipliedAlpha;
     }
 
     private static bool TryParseHexColor(string hexColor, out Microsoft.Xna.Framework.Color color)

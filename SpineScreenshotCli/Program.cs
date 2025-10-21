@@ -38,7 +38,8 @@ class Program
             }
             else
             {
-                SpineRenderer.RenderSpineScreenshot(options);
+                var renderer = new SpineRenderer_3_6(options);
+                renderer.Render();
             }
         }
         catch (Exception ex)
