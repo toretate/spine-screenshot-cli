@@ -21,3 +21,21 @@ Copyright © 2025
   --background             背景色指定。#RRGGBB フォーマットで指定。 (default: transparent)
   --help                   ヘルプを表示
   --version                バージョンを表示
+
+
+## ビルド環境の揃え方
+
+VS.code のコンソールで
+
+
+環境構築
+```
+winget install Microsoft.DotNet.SDK.9
+Install-Package NuGet.CommandLine -Scope CurrentUser
+git clone --branch 3.6 https://github.com/EsotericSoftware/spine-runtimes.git
+```
+
+ビルド
+```
+dotnet build
+```

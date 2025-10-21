@@ -18,7 +18,7 @@
     
     <!-- Performance optimizations -->
     <PublishSingleFile>true</PublishSingleFile>
-    <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
+    <RuntimeIdentifiers>win-x64;osx-x64;linux-x64</RuntimeIdentifiers>
     <SelfContained>true</SelfContained>
     <!-- Disable aggressive trimming for compatibility -->
     <PublishTrimmed>false</PublishTrimmed>
@@ -39,7 +39,7 @@
   <ItemGroup>
     <Compile Include="*.cs" />
     <Compile Include="src\**\*.cs" />
-    <Compile Include="Spine\**\*.cs">
+    <Compile Include="..\spine-runtimes\spine-csharp\src\**\*.cs">
       <WarningLevel>0</WarningLevel>
       <NoWarn>$(NoWarn);CS0618;CS0619;CS0612;CS1591;CS8602;CS8604;CS8618;CS8625;CS8600;CS8603;CS8601;CS8605;CS0649</NoWarn>
     </Compile>
