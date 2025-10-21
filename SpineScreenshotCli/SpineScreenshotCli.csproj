@@ -22,6 +22,12 @@
     <SelfContained>true</SelfContained>
     <!-- Disable aggressive trimming for compatibility -->
     <PublishTrimmed>false</PublishTrimmed>
+    
+    <!-- 外部ライブラリの警告を抑制 -->
+    <NoWarn>$(NoWarn);CS0618;CS0619;CS0612;CS1591;CS8602;CS8604;CS8618;CS8625;CS8600;CS8603;CS8601;CS8605;CS0649;NU1902;NU1903</NoWarn>
+    <WarningsAsErrors />
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,12 +39,27 @@
   <ItemGroup>
     <Compile Include="*.cs" />
     <Compile Include="src\**\*.cs" />
-    <Compile Include="Spine\**\*.cs" />
+    <Compile Include="Spine\**\*.cs">
+      <WarningLevel>0</WarningLevel>
+      <NoWarn>$(NoWarn);CS0618;CS0619;CS0612;CS1591;CS8602;CS8604;CS8618;CS8625;CS8600;CS8603;CS8601;CS8605;CS0649</NoWarn>
+    </Compile>
     <!-- Include spine-xna 3.6 renderer files -->
-    <Compile Include="..\spine-runtimes\spine-xna\src\SkeletonRenderer.cs" LinkBase="SpineXna" />
-    <Compile Include="..\spine-runtimes\spine-xna\src\MeshBatcher.cs" LinkBase="SpineXna" />
-    <Compile Include="..\spine-runtimes\spine-xna\src\Util.cs" LinkBase="SpineXna" />
-    <Compile Include="..\spine-runtimes\spine-xna\src\XnaTextureLoader.cs" LinkBase="SpineXna" />
+    <Compile Include="..\spine-runtimes\spine-xna\src\SkeletonRenderer.cs" LinkBase="SpineXna">
+      <WarningLevel>0</WarningLevel>
+      <NoWarn>$(NoWarn);CS0618;CS0619;CS0612;CS1591;CS8602;CS8604;CS8618;CS8625;CS8600;CS8603;CS8601;CS8605;CS0649</NoWarn>
+    </Compile>
+    <Compile Include="..\spine-runtimes\spine-xna\src\MeshBatcher.cs" LinkBase="SpineXna">
+      <WarningLevel>0</WarningLevel>
+      <NoWarn>$(NoWarn);CS0618;CS0619;CS0612;CS1591;CS8602;CS8604;CS8618;CS8625;CS8600;CS8603;CS8601;CS8605;CS0649</NoWarn>
+    </Compile>
+    <Compile Include="..\spine-runtimes\spine-xna\src\Util.cs" LinkBase="SpineXna">
+      <WarningLevel>0</WarningLevel>
+      <NoWarn>$(NoWarn);CS0618;CS0619;CS0612;CS1591;CS8602;CS8604;CS8618;CS8625;CS8600;CS8603;CS8601;CS8605;CS0649</NoWarn>
+    </Compile>
+    <Compile Include="..\spine-runtimes\spine-xna\src\XnaTextureLoader.cs" LinkBase="SpineXna">
+      <WarningLevel>0</WarningLevel>
+      <NoWarn>$(NoWarn);CS0618;CS0619;CS0612;CS1591;CS8602;CS8604;CS8618;CS8625;CS8600;CS8603;CS8601;CS8605;CS0649</NoWarn>
+    </Compile>
     <!-- Exclude debug renderer to avoid conflicts -->
     <!-- <Compile Include="..\spine-runtimes\spine-xna\src\SkeletonDebugRenderer.cs" LinkBase="SpineXna" /> -->
     <!-- <Compile Include="..\spine-runtimes\spine-xna\src\ShapeRenderer.cs" LinkBase="SpineXna" /> -->
