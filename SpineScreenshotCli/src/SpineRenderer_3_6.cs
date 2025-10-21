@@ -248,6 +248,8 @@ public class SpineRenderer_3_6 : IDisposable
         // フレーム指定
         if (options.Frame > 0)
         {
+            var animation = skeletonData.FindAnimation(animationName);
+
             // Calculate time based on frame index (0-based)
             float frameTime = (options.Frame - 1) * (1.0f / 30.0f); // Assuming 30 FPS
             
