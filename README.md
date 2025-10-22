@@ -88,7 +88,7 @@ dotnet build
 * [x] ヘッドレス撮影処理
 * [x] 1フレーム目のスクショ保存
 * [x] anime all 対応
-* [ ] skin all 対応
+* [x] skin all 対応
 * [x] 背景色指定 (-background)
 * [ ] 背景画像指定 (-background-bg)
 * [ ] frame
@@ -101,7 +101,7 @@ dotnet build
 * [ ] ファイル名
     * [x] ファイル名指定保存
     * [x] Animeテンプレート
-    * [ ] Skinテンプレート
+    * [x] Skinテンプレート
     * [ ] Frameテンプレート
     * [ ] XYテンプレート
     * [ ] SIZEテンプレート

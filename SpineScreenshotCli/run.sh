@@ -15,4 +15,5 @@ ATLAS="../spine-runtimes/examples/spineboy/export/spineboy-pro.skel"
   --position 512,1152 \
   --use-alpha \
   --background FFFFFF \
-  --premultiplied-alpha
+  --premultiplied-alpha \
+  --format webp

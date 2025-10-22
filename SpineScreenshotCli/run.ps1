@@ -13,4 +13,5 @@ dotnet run `
   --position 512,1152 `
   --use-alpha `
   --background FFFFFF `
-  --premultiplied-alpha
+  --premultiplied-alpha `
+  --format webp

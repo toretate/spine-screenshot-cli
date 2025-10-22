@@ -69,6 +69,11 @@ public class SpineFileInfo
         Console.WriteLine($"Skeleton: {this.SkeletonPath}");
         Console.WriteLine($"Skins: {string.Join(", ", this.skins.Select(s => s.Name))}");
         Console.WriteLine($"Animations: {string.Join(", ", this.animations.Select(a => a.Name))}");
+        foreach (var anim in this.animations) {
+            Console.WriteLine($"  Animation '{anim.Name}': Duration = {anim.Duration} seconds");
+        }
+
+
         Console.WriteLine($"Bones: {this.bones}");
         Console.WriteLine($"Slots: {this.slots}");
     }

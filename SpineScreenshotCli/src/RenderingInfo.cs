@@ -101,36 +101,59 @@ public class RenderingInfo {
         }
     }
 
-    public static String OutputFilePath( Options options, String animationName, SkeletonData skeletonData, int width, int height ) {
+    public static String OutputFilePath(
+        Options options
+        , String skinName
+        , String animationName
+        , SkeletonData skeletonData
+        , int width
+        , int height
+    ) {
         string outputPath = string.Empty;
         if (!string.IsNullOrEmpty(options.OutputFileName))
         {
+            string[,] templateDefs = new string[,]
+            {
+                { "_SKIN_", skinName },
+                { "_ANIME_", animationName }
+            };
+
             // Use specified filename with _ANIME_ placeholder replacement
             string outputFileName = options.OutputFileName;
-            if (!string.IsNullOrEmpty(animationName) && outputFileName.Contains("_ANIME_"))
+            for (var i = 0; i < templateDefs.GetLength(0); i++)
             {
-                outputFileName = outputFileName.Replace("_ANIME_", animationName);
+                var key = templateDefs[i,0];
+                var value = templateDefs[i,1];
+                if (!string.IsNullOrEmpty(value) && outputFileName.Contains(key))
+                {
+                    outputFileName = outputFileName.Replace(key, value);
+                }
             }
             outputPath = Path.Combine(options.OutputDir!, outputFileName);
-            // Ensure .png extension
-            if (!Path.HasExtension(outputPath) || Path.GetExtension(outputPath).ToLower() != ".png")
-            {
-                outputPath = Path.ChangeExtension(outputPath, ".png");
+
+            // Format指定による拡張子変更
+            if( Path.HasExtension(outputPath) ) {
+                var extension = options.Format.ToLower() switch
+                {
+                    "png" => "png",
+                    "webp" => "webp",
+                    _ => "png" // default fallback
+                };
+                outputPath = Path.ChangeExtension(outputPath, extension);
             }
         }
         else
         {
             // Auto-generate filename
-            string fileName = CreateOutputFileName(options, skeletonData, width, height, animationName);
+            string fileName = CreateOutputFileName(options, skeletonData, width, height, skinName, animationName);
             outputPath = Path.Combine(options.OutputDir!, fileName);
         }
         return outputPath;
     }
 
-    private static string CreateOutputFileName(Options options, SkeletonData skeletonData, int width, int height, string? animationName = null)
+    private static string CreateOutputFileName(Options options, SkeletonData skeletonData, int width, int height, string skinName, string? animationName = null)
     {
         var skeletonName = Path.GetFileNameWithoutExtension(options.SkeletonPath);
-        var skinName = options.Skin ?? "default";
         var animName = animationName ?? options.Animation ?? "none";
         var frame = options.Frame;
         

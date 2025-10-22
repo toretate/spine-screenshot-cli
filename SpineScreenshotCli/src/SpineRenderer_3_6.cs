@@ -9,6 +9,7 @@ public class SpineRenderer_3_6 : IDisposable
 {
     private readonly Options _options;
     private readonly RenderingInfo _renderingInfo;
+    private String[] _skins = Array.Empty<string>();
     private String[] _animations = Array.Empty<string>();
 
     private HeadlessGraphicsService _graphicsService;
@@ -28,6 +29,26 @@ public class SpineRenderer_3_6 : IDisposable
         this._renderingInfo = new RenderingInfo(options);
         this._renderingInfo.PremultipliedAlpha = options.UseAlpha; // Alphaで初期化する
 
+        var info = SpineFileInfo.Load(options);
+
+        if (string.IsNullOrEmpty(options.Skin))
+        {
+            // Skin指定なし
+            Console.WriteLine("No skin specified, using default skin.");
+            this._skins = ["default"];
+        }
+        else if (options.Skin.Equals("all", StringComparison.OrdinalIgnoreCase))
+        {
+            // 全Skinを書き出す
+            this._skins = info?.skins.Items.Select(s => s.Name).ToArray() ?? Array.Empty<string>();
+        }
+        else
+        {
+            // 指定Skinのみを書き出す
+            this._skins = new[] { options.Skin! };
+        }
+
+
         if (string.IsNullOrEmpty(options.Animation))
         {
             // アニメーション指定なし
@@ -37,12 +58,9 @@ public class SpineRenderer_3_6 : IDisposable
         else if (!string.IsNullOrEmpty(options.Animation) && options.Animation.Equals("all", StringComparison.OrdinalIgnoreCase))
         {
             // 全アニメーションを書き出す
-            var info = SpineFileInfo.Load(options);
             this._animations = info?.animations.Items.Select(a => a.Name).ToArray() ?? Array.Empty<string>();
-            Console.WriteLine($"Rendering ALL animations: {this._animations.Length} animations found.");
         } else {
             // 指定アニメーションのみを書き出す
-            Console.WriteLine($"Rendering SINGLE animation");
             this._animations = new[] { options.Animation! };
         }
 
@@ -58,35 +76,26 @@ public class SpineRenderer_3_6 : IDisposable
     /// レンダリング、ファイル保存の実行
     public void Render()
     {
-        foreach (var animationName in this._animations)
+        foreach (var skinName in this._skins)
         {
-            if (string.IsNullOrEmpty(animationName))
+            foreach (var animationName in this._animations)
             {
-                Console.WriteLine("No animation specified, skipping.");
-                continue;
-            }
+                if (string.IsNullOrEmpty(animationName))
+                {
+                    Console.WriteLine("No animation specified, skipping.");
+                    continue;
+                }
 
-            Console.WriteLine($"Rendering animation: {animationName}");
-            this._RenderAnimation(animationName);
+                Console.WriteLine($"Rendering: {skinName} {animationName}");
+                this._RenderAnimation(skinName, animationName);
+            }
         }
     }
 
     ///
     /// 指定アニメーションのみを書き出す処理
     /// 
-    private void _RenderAnimation(string? animationName)
-    {
-        // Create headless graphics service for single animation rendering
-        var options = this._options;
-
-        // Load Spine Atlas with MonoGame texture loader
-        this._RenderAnimationWithGraphicsDevice(animationName);
-    }
-
-    ///
-    /// GraphicsDevice に画像を書き込む
-    /// 
-    private void _RenderAnimationWithGraphicsDevice(string? animationName)
+    private void _RenderAnimation(string skinName, string? animationName)
     {
         var options = this._options;
         var skeleton = this._skeleton;
@@ -113,8 +122,6 @@ public class SpineRenderer_3_6 : IDisposable
         Console.WriteLine($"Skeleton Position: ({skeletonX}, {skeletonY})");
         Console.WriteLine($"Background Color: {backgroundColor}");
         Console.WriteLine($"UseAlpha: {options.UseAlpha}, PremultipliedAlpha: {options.PremultipliedAlpha}");
-        Console.WriteLine($"Loaded skeleton with {skeletonData.Skins.Count} skins, {skeletonData.Animations.Count} animations");
-        Console.WriteLine($"Available animations: {string.Join(", ", skeletonData.Animations.Select(a => a.Name))}");
 
 
         // Apply setup pose first - this is critical for consistent rendering
@@ -125,7 +132,7 @@ public class SpineRenderer_3_6 : IDisposable
         using var renderTarget = new RenderTarget2D(graphicsDevice, width, height, false, SurfaceFormat.Color, DepthFormat.None);
         graphicsDevice.SetRenderTarget(renderTarget);
         graphicsDevice.Clear(backgroundColor);
-        SetSkinToSkeleton(options, skeletonData, skeleton);
+        SetSkinToSkeleton(skinName, skeletonData, skeleton);
 
         // Complete skeleton reset to ensure clean state for each animation
         skeleton.SetToSetupPose();
@@ -135,27 +142,17 @@ public class SpineRenderer_3_6 : IDisposable
         SetAnimationToSkeleton( animationName, options, skeletonData, skeleton );
 
         // スロットとアタッチメントをデバッグ表示
-        CheckVisibleSlotsAndAttachments(skeleton);
+        // CheckVisibleSlotsAndAttachments(skeleton);
 
         // 描画先をリセット
         graphicsDevice.SetRenderTarget(null);
 
         // Save render target
         Console.WriteLine($"About to save render target. Size: {renderTarget.Width}x{renderTarget.Height}");
-        Console.WriteLine($"RenderTarget Format: {renderTarget.Format}");
-        Console.WriteLine($"RenderTarget Usage: {renderTarget.LevelCount}");
-
-        // レンダリング結果をチェック
-        {
-            var checkData = new Microsoft.Xna.Framework.Color[100]; // 最初の100ピクセルをチェック
-            renderTarget.GetData(0, new Microsoft.Xna.Framework.Rectangle(0, 0, 10, 10), checkData, 0, 100);
-            var nonTransparentCount = checkData.Count(c => c.A > 0);
-            Console.WriteLine($"Sample check: {nonTransparentCount}/100 pixels are non-transparent");
-        }
 
         // 描画ターゲットの結果をファイル書き込み
         SpineData.ImageFormat imageFormat = RenderingInfo.GetImageFormat( options );
-        string outputPath = RenderingInfo.OutputFilePath( options, animationName, skeletonData, width, height );
+        string outputPath = RenderingInfo.OutputFilePath( options, skinName, animationName, skeletonData, width, height );
         SpineData.SaveRenderTarget(renderTarget, outputPath, imageFormat);
         Console.WriteLine($"Screenshot saved: {outputPath}");
 
@@ -200,20 +197,17 @@ public class SpineRenderer_3_6 : IDisposable
     }
 
     /// スケルトンにスキンを設定する
-    private static void SetSkinToSkeleton(Options options, SkeletonData skeletonData, Skeleton skeleton) {
-        if (!string.IsNullOrEmpty(options.Skin))
+    private static void SetSkinToSkeleton(String skinName, SkeletonData skeletonData, Skeleton skeleton) {
+        var skin = skeletonData.FindSkin(skinName);
+        if (skin != null)
         {
-            var skin = skeletonData.FindSkin(options.Skin);
-            if (skin != null)
-            {
-                skeleton.SetSkin(skin);
-                skeleton.SetSlotsToSetupPose();
-                Console.WriteLine($"Applied skin: {options.Skin}");
-            }
-            else
-            {
-                Console.WriteLine($"Warning: Skin '{options.Skin}' not found. Available skins: {string.Join(", ", skeletonData.Skins.Select(s => s.Name))}");
-            }
+            skeleton.SetSkin(skin);
+            skeleton.SetSlotsToSetupPose();
+            Console.WriteLine($"Applied skin: {skinName}");
+        }
+        else
+        {
+            Console.WriteLine($"Warning: Skin '{skinName}' not found. Available skins: {string.Join(", ", skeletonData.Skins.Select(s => s.Name))}");
         }
     }
 
