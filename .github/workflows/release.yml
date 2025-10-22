@@ -1,0 +1,54 @@
+name: Release CLI on Tag
+
+on:
+  push:
+    tags:
+      - 'v*'  # v1.0.0 などのタグにマッチ
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rid: [win-x64, win-arm64, linux-x64, osx-x64, osx-arm64]
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Extract version from tag
+        id: extract_version
+        run: |
+          echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "clean_version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Publish CLI for ${{ matrix.rid }}
+        run: |
+          dotnet publish ./SpineScreenshotCli/SpineScreenshotCli.csproj \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained false \
+            /p:PublishSingleFile=true \
+            /p:PublishTrimmed=false \
+            /p:IncludeNativeLibrariesForSelfExtract=true \
+            /p:Version=${{ steps.extract_version.outputs.clean_version }} \
+            /p:InformationalVersion=${{ steps.extract_version.outputs.version }}
+
+
+      - name: Compress binary
+        run: |
+          cd SpineScreenshotCli/bin/Release/net9.0/${{ matrix.rid }}/publish
+          zip -r SpineScreenshotCli-${{ matrix.rid }}.zip * -x "*.pdb"
+
+      - name: Upload binary to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            SpineScreenshotCli/bin/Release/net9.0/${{ matrix.rid }}/publish/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

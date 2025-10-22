@@ -12,14 +12,16 @@
     <AssemblyDescription>Command-line tool for capturing screenshots from Spine animations</AssemblyDescription>
     <AssemblyCompany>toretate</AssemblyCompany>
     <AssemblyProduct>spine-screenshot-cli</AssemblyProduct>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
     <Copyright>Copyright © 2025</Copyright>
     
     <!-- Performance optimizations -->
+    <RuntimeIdentifiers>win-x64;win-arm64;osx-arm64;osx-x64;linux-x64</RuntimeIdentifiers>
+    <SelfContained>false</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
-    <RuntimeIdentifiers>win-x64;osx-x64;linux-x64</RuntimeIdentifiers>
-    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
     <!-- Disable aggressive trimming for compatibility -->
     <PublishTrimmed>false</PublishTrimmed>
     
