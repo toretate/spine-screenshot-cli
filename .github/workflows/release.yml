@@ -16,6 +16,9 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Clone spine-runtimes (branch 3.6)
+        run: git clone --branch 3.6 https://github.com/EsotericSoftware/spine-runtimes.git spine-runtimes
+
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
         with:
@@ -26,6 +29,9 @@ jobs:
         run: |
           echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           echo "clean_version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Restore dependencies
+        run: dotnet restore SpineScreenshotCli/SpineScreenshotCli.csproj
 
       - name: Publish CLI for ${{ matrix.rid }}
         run: |
@@ -38,7 +44,6 @@ jobs:
             /p:IncludeNativeLibrariesForSelfExtract=true \
             /p:Version=${{ steps.extract_version.outputs.clean_version }} \
             /p:InformationalVersion=${{ steps.extract_version.outputs.version }}
-
 
       - name: Compress binary
         run: |
