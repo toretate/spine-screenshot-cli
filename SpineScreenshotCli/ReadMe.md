@@ -3,9 +3,6 @@ Spine の自動スクリーンショット作成ツールです
 
 ```
 > SpineScreenshotCli
-Spine Screenshot CLI 1.0.0+5b844fc2e882eecefe2aa9dddd5e3ccc25547487
-Copyright © 2025
-  Required option 'a, atlas' is missing.
   -a, --atlas              Atlas ファイル(.atlas) の指定
   -s, --skel               Skeleton ファイル(.skel or .json) の指定
   --skin                   スクショを取る Skin 名。all 指定で全 skin を対象とします
@@ -19,22 +16,28 @@ Copyright © 2025
   --scale                  画像の拡大率。(default: 1)
   --out-dir                出力フォルダ。(default: ./out)
   -o, --out                出力ファイル名 (default: 自動的にファイル名生成)
-  --info                   Skin及びAnimation一覧を含むファイル情報を出力します
   --premultiplied-alpha    Pre Multiplied Alpha Blending を使います (Default: false)
   --use-alpha              Alpha channel の処理を行います(Default: true)
   --background             背景色指定。RRGGBB フォーマットで指定。 (default: transparent)
   --background-bg          背景画像指定。(default: background指定に寄る)
+
+  # Info利用時
+  --info                   Skin及びAnimation一覧を含むファイル情報を出力します
+  -a, --atlas              Atlas ファイル(.atlas) の指定
+  -s, --skel               Skeleton ファイル(.skel or .json) の指定
+
   --help                   ヘルプを表示
+
   --version                バージョンを表示
 ```
 
 ## 出力ファイル名ルール
 -o に指定する出力ファイル名にはテンプレートを指定できます
- * _SKIN_  : skin名で置き換えられます
- * _ANIME_ : animation名で置き換えられます
- * _FRAME_ : スクショが撮られたframe番号で置き換えられます(4桁数字)
- * _XY_    : positionで置き換えらられます(XxY)
- * _SIZE_  : sizeで置き換えられます(WIDTHxHEIGHT)
+ * ```_SKIN_```  : skin名で置き換えられます
+ * ```_ANIME_``` : animation名で置き換えられます
+ * ```_FRAME_``` : スクショが撮られたframe番号で置き換えられます(4桁数字)
+ * ```_XY_```    : positionで置き換えらられます(XxY)
+ * ```_SIZE_```  : sizeで置き換えられます(WIDTHxHEIGHT)
 
 
 ## スクショのタイミング指定
@@ -60,9 +63,9 @@ Copyright © 2025
 
 # ビルド環境の揃え方
 
-VS.code のコンソールで下記を実行する
-
 ##  環境構築
+
+PowerShellで事前環境構築
 
 ```
 winget install Microsoft.DotNet.SDK.9
@@ -112,24 +115,15 @@ dotnet build
 * [ ] グリッド画像保存
 * [ ] マルチビルド
     * [x] win-x64
-    * [ ] win-x86
     * [ ] win-arm64
     * [ ] linux-x64
     * [ ] linux-musl-x64
     * [ ] linux-musl-arm64
-    * [ ] linux-arm
     * [ ] linux-arm64
     * [ ] linux-bionic-arm64
     * [ ] linux-loongarch64
     * [x] osx-x64
     * [ ] osx-arm64
-    * [ ] ios-arm64
-    * [ ] iossimulator-arm64
-    * [ ] iossimulator-x64
-    * [ ] android-arm64
-    * [ ] android-arm
-    * [ ] android-x64
-    * [ ] android-x86
 * [ ] リリース処理
     * [ ] GithubActions による自動ビルド
     * [ ] GithubActions による自動テスト
@@ -152,13 +146,6 @@ dotnet build
     * [ ] 4.0.64 対応
     * [ ] 4.1.00 対応
 * [ ] Runtime
-    * [-] .NET Framework 3.5 SP1 対応 → 対応予定無し
-    * [-] .NET Framework 4.6.2 対応 → 対応予定無し
-    * [-] .NET Framework 4.7 対応 → 対応予定無し
-    * [-] .NET Framework 4.7.1 対応 → 対応予定無し
-    * [-] .NET Framework 4.7.2 対応 → 対応予定無し
-    * [-] .NET Framework 4.8 対応 → 対応予定無し
-    * [-] .NET Framework 4.8.1 対応 → 対応予定無し
     * [ ] .NET  8 対応
     * [x] .NET  9 対応：XNA, MonoGame(Mac) で確認
     * [ ] .NET 10 対応
