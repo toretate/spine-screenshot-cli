@@ -50,7 +50,7 @@ public class RenderingInfo {
         Microsoft.Xna.Framework.Color backgroundColor = Microsoft.Xna.Framework.Color.Transparent;
         if (!string.IsNullOrEmpty(options.BackgroundColor))
         {
-            if (TryParseHexColor(options.BackgroundColor, out var parsedColor))
+            if (TryParseHexColor("#" + options.BackgroundColor, out var parsedColor))
             {
                 Console.WriteLine($"Using background color: {options.BackgroundColor}");
                 backgroundColor = parsedColor;

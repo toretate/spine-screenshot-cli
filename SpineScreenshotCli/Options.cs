@@ -19,6 +19,9 @@ public class Options
     [Option("frame", Required = false, Default = 0, HelpText = "Frame number to capture (0-based)")]
     public int Frame { get; set; }
 
+    [Option("fps", Required = false, Default = 30.0f, HelpText = "Frame rate (deafult 30)")]
+    public float Fps { get; set; }
+
     [Option("position", Required = false, HelpText = "Position as 'x,y' (default: center)")]
     public string? Position { get; set; }
 
@@ -43,7 +46,7 @@ public class Options
     [Option("use-alpha", Required = false, HelpText = "Enable alpha channel processing (SpineUseAlpha, default: true)")]
     public bool UseAlpha { get; set; }
 
-    [Option("background", Required = false, HelpText = "Background color in #RRGGBB format (default: transparent)")]
+    [Option("background", Required = false, HelpText = "Background color in RRGGBB format (default: transparent)")]
     public string? BackgroundColor { get; set; }
 
     [Option("format", Required = false, Default = "png", HelpText = "Output format: png or webp (default: png)")]

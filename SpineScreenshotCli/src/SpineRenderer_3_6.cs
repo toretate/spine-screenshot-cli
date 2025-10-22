@@ -124,6 +124,7 @@ public class SpineRenderer_3_6 : IDisposable
         // 描画ターゲットを作成し、GraphicsDeviceに設定
         using var renderTarget = new RenderTarget2D(graphicsDevice, width, height, false, SurfaceFormat.Color, DepthFormat.None);
         graphicsDevice.SetRenderTarget(renderTarget);
+        graphicsDevice.Clear(backgroundColor);
         SetSkinToSkeleton(options, skeletonData, skeleton);
 
         // Complete skeleton reset to ensure clean state for each animation
@@ -251,7 +252,9 @@ public class SpineRenderer_3_6 : IDisposable
             var animation = skeletonData.FindAnimation(animationName);
 
             // Calculate time based on frame index (0-based)
-            float frameTime = (options.Frame - 1) * (1.0f / 30.0f); // Assuming 30 FPS
+            var frame = options.Frame;
+            var fps = options.Fps > 0 ? options.Fps : 30.0f; // Default to 30 FPS if not specified
+            float frameTime = (frame - 1) * (1.0f / fps); // Assuming 30 FPS
             
             // Clamp time to animation duration
             frameTime = Math.Min(frameTime, animation.Duration);

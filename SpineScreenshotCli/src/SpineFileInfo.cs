@@ -13,7 +13,14 @@ public class SpineFileInfo
     public readonly int bones;
     public readonly int slots;
 
-    public SpineFileInfo( String atlasPath, String skeletonPath, ExposedList<Skin> skins, ExposedList<Animation> animations, int bones, int slots ) {
+    private SpineFileInfo(
+        String atlasPath,
+        String skeletonPath,
+        ExposedList<Skin> skins,
+        ExposedList<Animation> animations,
+        int bones,
+        int slots
+    ) {
         this.AtlasPath = atlasPath;
         this.SkeletonPath = skeletonPath;
         this.skins = skins;
@@ -25,7 +32,9 @@ public class SpineFileInfo
     public static SpineFileInfo Load( Options options ) {
         SpineFileInfo info = null;
 
-        if (string.IsNullOrEmpty(options.AtlasPath) || !File.Exists(options.AtlasPath)) {
+        if (string.IsNullOrEmpty(options.AtlasPath) || !File.Exists(options.AtlasPath))
+        {
+            Console.WriteLine("Error: Atlas file not found.: ${options.AtlasPath}");
             return null;
         }
 

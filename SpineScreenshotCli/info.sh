@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# dotnet run --project ./SpineScreenshotCli/SpineScreenshotCli.csproj -- "$@"
+SKEL="../spine-runtimes/examples/spineboy/export/spineboy.atlas"
+ATLAS="../spine-runtimes/examples/spineboy/export/spineboy-pro.skel"
 
 dotnet run \
-  --atlas ../example/prc/100711.atlas \
-  --skel ../example/prc/100711.skel \
+  --skel $SKEL \
+  --atlas $ATLAS \
   --info
