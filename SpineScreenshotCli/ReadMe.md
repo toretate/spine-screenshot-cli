@@ -1,6 +1,7 @@
 Spine の自動スクリーンショット作成ツールです
 現在は Spine 3.6.x のみ対応しています
 
+```
 > SpineScreenshotCli
 Spine Screenshot CLI 1.0.0+5b844fc2e882eecefe2aa9dddd5e3ccc25547487
 Copyright © 2025
@@ -25,6 +26,7 @@ Copyright © 2025
   --background-bg          背景画像指定。(default: background指定に寄る)
   --help                   ヘルプを表示
   --version                バージョンを表示
+```
 
 ## 出力ファイル名ルール
 -o に指定する出力ファイル名にはテンプレートを指定できます
@@ -150,17 +152,17 @@ dotnet build
     * [ ] 4.0.64 対応
     * [ ] 4.1.00 対応
 * [ ] Runtime
-    * [-] .NET Framework 3.5 SP1 対応 → たぶん無理
-    * [-] .NET Framework 4.6.2 対応 → たぶん無理
-    * [ ] .NET Framework 4.7 対応
-    * [ ] .NET Framework 4.7.1 対応
-    * [ ] .NET Framework 4.7.2 対応
-    * [ ] .NET Framework 4.8 対応
-    * [ ] .NET Framework 4.8.1 対応
+    * [-] .NET Framework 3.5 SP1 対応 → 対応予定無し
+    * [-] .NET Framework 4.6.2 対応 → 対応予定無し
+    * [-] .NET Framework 4.7 対応 → 対応予定無し
+    * [-] .NET Framework 4.7.1 対応 → 対応予定無し
+    * [-] .NET Framework 4.7.2 対応 → 対応予定無し
+    * [-] .NET Framework 4.8 対応 → 対応予定無し
+    * [-] .NET Framework 4.8.1 対応 → 対応予定無し
     * [ ] .NET  8 対応
     * [x] .NET  9 対応：XNA, MonoGame(Mac) で確認
     * [ ] .NET 10 対応
-    * [-] npm：無理(3.6系統のSkeltonBinaryが公式TSライブラリ未対応)
+    * [ ] npm (Spine 3.8 未満のSkeltonBinaryが公式TSライブラリ未対応)
     * [ ] その他：良くわかってない。.NET版があるから問題無し？
 * [ ] 資料
     * [ ] ヘルプ(--help) 作成
