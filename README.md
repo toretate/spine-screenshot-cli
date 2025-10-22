@@ -20,6 +20,7 @@ Spine の自動スクリーンショット作成ツールです
   --use-alpha              Alpha channel の処理を行います(Default: true)
   --background             背景色指定。RRGGBB フォーマットで指定。 (default: transparent)
   --background-bg          背景画像指定。(default: background指定に寄る)
+  --format                 今のところ png, webp のみ
 
   # Info利用時
   --info                   Skin及びAnimation一覧を含むファイル情報を出力します
@@ -113,22 +114,8 @@ dotnet build
     * [x] WebP (静止画)
     * [ ] WebP (アニメ)
 * [ ] グリッド画像保存
-* [ ] マルチビルド
-    * [x] win-x64
-    * [ ] win-arm64
-    * [ ] linux-x64
-    * [ ] linux-musl-x64
-    * [ ] linux-musl-arm64
-    * [ ] linux-arm64
-    * [ ] linux-bionic-arm64
-    * [ ] linux-loongarch64
-    * [x] osx-x64
-    * [ ] osx-arm64
-* [ ] リリース処理
-    * [ ] GithubActions による自動ビルド
-    * [ ] GithubActions による自動テスト
-    * [ ] リリースバイナリの公開対応(手動)
-    * [ ] リリースバイナリの公開対応(自動)
+* [x] マルチビルド(win-x64, win-arm64, linux-x64, osx-x64, osx-arm64)
+* [x] リリース処理(GithubActionsによる Release)
 * [ ] Spine Version
     * [ ] 2.1.08 対応
     * [ ] 2.1.25 対応
