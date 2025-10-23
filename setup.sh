@@ -23,22 +23,25 @@ VERSIONS=("3.6.32" "3.6.39" "3.6.53")
 
 echo "=== Spine Runtimes Environment Setup ==="
 
+# libraries ディレクトリ削除
+# rm -rf "${SPINE_LIBRARIES_DIR}"
+
 # external ディレクトリ作成
 mkdir -p "${EXTERNAL_DIR}"
 
 # サブモジュールの初期化・更新
-if [ ! -d "${SPINE_RUNTIMES_DIR}/.git" ]; then
-    echo "Initializing spine-runtimes submodule..."
-    git submodule update --init --recursive
+# if [ ! -d "${SPINE_RUNTIMES_DIR}/.git" ]; then
+#     echo "Initializing spine-runtimes submodule..."
+#     git submodule update --init --recursive
     
-    if [ ! -d "${SPINE_RUNTIMES_DIR}/.git" ]; then
-        echo "ERROR: Failed to initialize submodule. Please check if .gitmodules exists."
-        exit 1
-    fi
-else
+#     if [ ! -d "${SPINE_RUNTIMES_DIR}/.git" ]; then
+#         echo "ERROR: Failed to initialize submodule. Please check if .gitmodules exists."
+#         exit 1
+#     fi
+# else
     echo "Updating spine-runtimes submodule..."
     git submodule update --recursive
-fi
+# fi
 
 # 作業ディレクトリに移動
 cd "${SPINE_RUNTIMES_DIR}"
@@ -56,19 +59,19 @@ for version in "${VERSIONS[@]}"; do
     
     # C# ライブラリのコピー
     if [ -d "spine-csharp/src" ]; then
-        cp -r "spine-csharp/src" "${version_lib_dir}/spine-csharp"
+        cp -r "spine-csharp/src/" "${version_lib_dir}/spine-csharp/"
         echo "  Copied spine-csharp for ${version}"
     fi
     
     # XNA ライブラリのコピー
     if [ -d "spine-xna/src" ]; then
-        cp -r "spine-xna/src" "${version_lib_dir}/spine-xna"
+        cp -r "spine-xna/src/" "${version_lib_dir}/spine-xna/"
         echo "  Copied spine-xna for ${version}"
     fi
     
     # MonoGame ライブラリのコピー
     if [ -d "spine-monogame/src" ]; then
-        cp -r "spine-monogame/src" "${version_lib_dir}/spine-monogame"
+        cp -r "spine-monogame/src/" "${version_lib_dir}/spine-monogame/"
         echo "  Copied spine-monogame for ${version}"
     fi
     
@@ -86,6 +89,11 @@ done
 git checkout main 2>/dev/null || git checkout master 2>/dev/null || true
 
 cd "${SCRIPT_DIR}"
+
+# SkeletonDebugRenderer.cs の削除
+echo "Removing SkeletonDebugRenderer.cs files..."
+find "${SPINE_LIBRARIES_DIR}" -name "SkeletonDebugRenderer.cs" -type f -delete
+echo "  Removed all SkeletonDebugRenderer.cs files"
 
 echo "=== Setup completed ==="
 echo "Libraries: ${SPINE_LIBRARIES_DIR}"
