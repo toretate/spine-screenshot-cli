@@ -1,7 +1,9 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Spine;
+using System;
 using System.IO;
+using System.Linq;
 
 namespace SpineScreenshotCli;
 
@@ -138,23 +140,47 @@ public class SpineRenderer_3_6 : IDisposable
         skeleton.SetToSetupPose();
         skeleton.SetSlotsToSetupPose();
 
-        // 描画(設定済みのRenderTargetに対して描画される)
+        // Skeletonにアニメーションを設定
         SetAnimationToSkeleton( animationName, options, skeletonData, skeleton );
+
+        // 指定フレームで描画
+        float fps = options.Fps > 0 ? options.Fps : 30.0f; // デフォルト30fps
+        int range = options.Range > 0 ? Math.Max(options.Range, 0) : 0;
+        int frame = options.Frame > 1 ? options.Frame - 1 : 0;
+        int interval = options.Interval > 1 ? Math.Max(options.Interval, 1) : 1;
+        SetAnimationFrameToSkeleton(animationName, frame, fps, skeletonData, skeleton);
 
         // スロットとアタッチメントをデバッグ表示
         // CheckVisibleSlotsAndAttachments(skeleton);
+        for( int i=frame; i<=frame+range; i+=interval ) {
+            graphicsDevice.SetRenderTarget(renderTarget);
+            graphicsDevice.Clear(backgroundColor);
 
-        // 描画先をリセット
-        graphicsDevice.SetRenderTarget(null);
+            // フレーム進行
+            SetAnimationFrameToSkeleton(animationName, i, fps, skeletonData, skeleton);
+            // 描画先をリセット
+            graphicsDevice.SetRenderTarget(null);
 
-        // Save render target
-        Console.WriteLine($"About to save render target. Size: {renderTarget.Width}x{renderTarget.Height}");
+            // 描画ターゲットの結果をファイル書き込み
+            SpineData.ImageFormat imageFormat = RenderingInfo.GetImageFormat( options );
+            string outputPath = RenderingInfo.OutputFilePath(
+                options
+                , skinName
+                , animationName
+                , skeletonData
+                , i
+                , width
+                , height
+                , skeletonX
+                , skeletonY
+            );
+            SpineData.SaveRenderTarget(renderTarget, outputPath, imageFormat);
+            Console.WriteLine($"Screenshot saved: {outputPath}");
 
-        // 描画ターゲットの結果をファイル書き込み
-        SpineData.ImageFormat imageFormat = RenderingInfo.GetImageFormat( options );
-        string outputPath = RenderingInfo.OutputFilePath( options, skinName, animationName, skeletonData, width, height );
-        SpineData.SaveRenderTarget(renderTarget, outputPath, imageFormat);
-        Console.WriteLine($"Screenshot saved: {outputPath}");
+            graphicsDevice.SetRenderTarget(null);
+            graphicsDevice.Clear(backgroundColor);
+        }
+
 
         // Reset graphics device state after rendering to prevent interference between animations
         graphicsDevice.SetRenderTarget(null);
@@ -170,30 +196,6 @@ public class SpineRenderer_3_6 : IDisposable
         // Do not dispose shared atlas - it will be disposed by the caller
         // SkeletonRenderer doesn't require explicit disposal in this version
         Console.WriteLine($"Completed processing animation: {animationName}");
-    }
-
-
-    /// Debug: Check visible slots and attachments  
-    private static void CheckVisibleSlotsAndAttachments(Skeleton skeleton) {
-        int visibleSlots = 0;
-        for (int i = 0; i < skeleton.DrawOrder.Count; i++)
-        {
-            var slot = skeleton.DrawOrder.Items[i];
-            if (slot.Attachment != null)
-            {
-                visibleSlots++;
-                Console.WriteLine($"  Slot[{i}]: {slot.Data.Name} -> {slot.Attachment.Name} (Color: {slot.R:F2}, {slot.G:F2}, {slot.B:F2}, {slot.A:F2})");
-                
-                // Additional debug for RegionAttachment
-                if (slot.Attachment is RegionAttachment regionAttachment)
-                {
-                    Console.WriteLine($"    RegionAttachment: X={regionAttachment.X}, Y={regionAttachment.Y}, Width={regionAttachment.Width}, Height={regionAttachment.Height}");
-                    Console.WriteLine($"    Scale: X={regionAttachment.ScaleX}, Y={regionAttachment.ScaleY}");
-                    Console.WriteLine($"    Rotation: {regionAttachment.Rotation}");
-                }
-            }
-        }
-        Console.WriteLine($"Total visible slots: {visibleSlots}");
     }
 
     /// スケルトンにスキンを設定する
@@ -212,7 +214,7 @@ public class SpineRenderer_3_6 : IDisposable
     }
 
     /// スケルトンにアニメーションを設定する
-    private void SetAnimationToSkeleton( string animationName, Options options, SkeletonData skeletonData, Skeleton skeleton ) {
+    private void SetAnimationToSkeleton(string animationName, Options options, SkeletonData skeletonData, Skeleton skeleton) {
         var animationStateData = this._animationStateData;
         var animationState = this._animationState;
 
@@ -234,28 +236,32 @@ public class SpineRenderer_3_6 : IDisposable
 
         skeleton.UpdateWorldTransform();
         var skeletonRenderer = this._skeletonRenderer;
-        skeletonRenderer.PremultipliedAlpha = options.UseAlpha;
+        skeletonRenderer.PremultipliedAlpha = false;
 
         // 座標系設定。左上を原点とする
         ((BasicEffect)skeletonRenderer.Effect).Projection = Matrix.CreateOrthographicOffCenter(0, this._renderingInfo.Width, this._renderingInfo.Height, 0, 1, 0);
+    }
 
+    private void SetAnimationFrameToSkeleton(string animationName, int frame, float fps, SkeletonData skeletonData, Skeleton skeleton) {
+        var animationState = this._animationState;
+        var skeletonRenderer = this._skeletonRenderer;
+        animationState.SetAnimation(0, animationName, false);
 
+        skeletonRenderer.PremultipliedAlpha = true;
         // フレーム指定
-        if (options.Frame > 0)
+        if (frame > 0)
         {
             var animation = skeletonData.FindAnimation(animationName);
 
             // Calculate time based on frame index (0-based)
-            var frame = options.Frame;
-            var fps = options.Fps > 0 ? options.Fps : 30.0f; // Default to 30 FPS if not specified
-            float frameTime = (frame - 1) * (1.0f / fps); // Assuming 30 FPS
-            
+            float frameTime = frame * (1.0f / fps); // Assuming 30 FPS
+
             // Clamp time to animation duration
             frameTime = Math.Min(frameTime, animation.Duration);
-            
+
             animationState.Update(frameTime);
             animationState.Apply(skeleton);
-            Console.WriteLine($"Applied animation: {animationName} at frame {options.Frame} (time: {frameTime:F3}s, max: {animation.Duration:F3}s)");
+            Console.WriteLine($"Applied animation: {animationName} at frame {frame} (time: {frameTime:F3}s, max: {animation.Duration:F3}s)");
         }
         else
         {

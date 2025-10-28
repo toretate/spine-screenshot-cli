@@ -1,20 +1,38 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Spine;
+using System.Drawing;
 using System.IO;
+using System;
 
 namespace SpineScreenshotCli;
 
 public class RenderingInfo {
-    public int Width { get; }
-    public int Height { get; }
+    private int _width = 800;
+    private int _height = 800;
 
-    public int X { get; }
-    public int Y { get; }
+    public int Width { get { return this._width; } }
+    public int Height { get { return this._height; } }
+
+    public Size RenderSize
+    {
+        get { return new Size(Width, Height); }
+        set
+        {
+            _width = value.Width;
+            _height = value.Height;
+        }
+    }
+
+    public int X { get; set; }
+    public int Y { get; set; }
 
     public Microsoft.Xna.Framework.Color BackgroundColor { get; }
 
+    public int Speed = 1;
+
     public bool PremultipliedAlpha { get; set; }
+    public bool UseAlpha { get; set; }
 
     public RenderingInfo( Options options ) {
         // サイズ指定
@@ -24,8 +42,8 @@ public class RenderingInfo {
             // サイズ指定が不正な場合エラー
             throw new ArgumentException($"Invalid size format: {options.Size}. Expected format: width,height");
         }
-        this.Width = width;
-        this.Height = height;
+        this._width = width;
+        this._height = height;
 
         // 位置指定
         int x, y;
@@ -69,6 +87,7 @@ public class RenderingInfo {
         this.BackgroundColor = backgroundColor;
 
         this.PremultipliedAlpha = options.PremultipliedAlpha;
+        this.UseAlpha = options.UseAlpha;
     }
 
     private static bool TryParseHexColor(string hexColor, out Microsoft.Xna.Framework.Color color)
@@ -106,8 +125,11 @@ public class RenderingInfo {
         , String skinName
         , String animationName
         , SkeletonData skeletonData
+        , int frame
         , int width
         , int height
+        , int x
+        , int y
     ) {
         string outputPath = string.Empty;
         if (!string.IsNullOrEmpty(options.OutputFileName))
@@ -115,7 +137,12 @@ public class RenderingInfo {
             string[,] templateDefs = new string[,]
             {
                 { "_SKIN_", skinName },
-                { "_ANIME_", animationName }
+                { "_ANIME_", animationName },
+                { "_FRAME_", frame.ToString() },
+                { "_XY_", $"{x}x${y}" },
+                { "_SIZE_", $"{width}x{height}" },
+                { "_ATLASNAME_", Path.GetFileNameWithoutExtension(options.AtlasPath) },
+                { "_SKELETONNAME_", Path.GetFileNameWithoutExtension(options.SkeletonPath) }
             };
 
             // Use specified filename with _ANIME_ placeholder replacement

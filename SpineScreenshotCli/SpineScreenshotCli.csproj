@@ -3,7 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>SpineScreenshotCli</RootNamespace>
+    <ImplicitUsings>false</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     
@@ -15,39 +16,57 @@
     <AssemblyVersion>0.1.0.0</AssemblyVersion>
     <FileVersion>0.1.0.0</FileVersion>
     <Copyright>Copyright © 2025</Copyright>
-    
+
+    <!-- 外部ライブラリの警告を抑制 -->
+    <NoWarn>$(NoWarn);CS0618;CS0619;CS0612;CS1591;CS8602;CS8604;CS8618;CS8625;CS8600;CS8603;CS8601;CS8605;CS0649;NU1902;NU1903</NoWarn>
+    <WarningsAsErrors />
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <SelfContained>false</SelfContained>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <!-- Performance optimizations -->
     <RuntimeIdentifiers>win-x64;win-arm64;osx-arm64;osx-x64;linux-x64</RuntimeIdentifiers>
-    <SelfContained>false</SelfContained>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
     <!-- Disable aggressive trimming for compatibility -->
     <PublishTrimmed>false</PublishTrimmed>
-    
-    <!-- 外部ライブラリの警告を抑制 -->
-    <NoWarn>$(NoWarn);CS0618;CS0619;CS0612;CS1591;CS8602;CS8604;CS8618;CS8625;CS8600;CS8603;CS8601;CS8605;CS0649;NU1902;NU1903</NoWarn>
-    <WarningsAsErrors />
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.4" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="*.cs" />
+    <Compile Include="Options.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="src\**\*.cs" />
 
     <!-- Include spine-xna 3.6.39 renderer files -->
-    <Compile Include="..\SpineLibraries\3.6.39\spine-csharp\**\*.cs">
+    <Compile Include="..\SpineLibraries\3.8\spine-csharp\**\*.cs">
       <WarningLevel>0</WarningLevel>
       <NoWarn>$(NoWarn);CS0618;CS0619;CS0612;CS1591;CS8602;CS8604;CS8618;CS8625;CS8600;CS8603;CS8601;CS8605;CS0649</NoWarn>
     </Compile>
-    <Compile Include="..\SpineLibraries\3.6.39\spine-xna\**\*.cs" LinkBase="SpineXna">
+    <Compile Include="..\SpineLibraries\3.8\spine-xna\**\*.cs" LinkBase="SpineXna">
       <WarningLevel>0</WarningLevel>
       <NoWarn>$(NoWarn);CS0618;CS0619;CS0612;CS1591;CS8602;CS8604;CS8618;CS8625;CS8600;CS8603;CS8601;CS8605;CS0649</NoWarn>
     </Compile>

@@ -1,6 +1,8 @@
 using Microsoft.Xna.Framework.Graphics;
 using Spine;
+using System;
 using System.IO;
+using System.Linq;
 
 namespace SpineScreenshotCli;
 
@@ -30,6 +32,7 @@ public class SpineFileInfo
     }
 
     public static SpineFileInfo Load( Options options ) {
+        Console.WriteLine("Loading Spine file information...");
         SpineFileInfo info = null;
 
         if (string.IsNullOrEmpty(options.AtlasPath) || !File.Exists(options.AtlasPath))
@@ -37,6 +40,7 @@ public class SpineFileInfo
             Console.WriteLine("Error: Atlas file not found.: ${options.AtlasPath}");
             return null;
         }
+        Console.WriteLine($"Atlas Path: {options.AtlasPath}");
 
         // Create a dummy graphics service just for loading
         using ( var graphicsService = new HeadlessGraphicsService(256, 256) ) {
@@ -45,6 +49,7 @@ public class SpineFileInfo
                 atlas = new Atlas(options.AtlasPath, new MonoGameTextureLoader(graphicsService.GraphicsDevice));
                 if (!string.IsNullOrEmpty(options.SkeletonPath) && File.Exists(options.SkeletonPath))
                 {
+                    Console.WriteLine($"Skeleton Path: {options.SkeletonPath}");
                     var skeletonData = SpineData.LoadSkeletonData(options.SkeletonPath, atlas);
                     info = new SpineFileInfo(
                         options.AtlasPath,

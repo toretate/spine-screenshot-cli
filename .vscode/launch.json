@@ -5,22 +5,41 @@
             // IntelliSense を使用して、C# デバッグに存在する属性を確認します
             // 既存の属性の説明にホバーを使用する
             // 詳細については、https://github.com/dotnet/vscode-csharp/blob/main/debugger-launchjson.md を参照してください
-            "name": ".NET Core Launch (console)",
+            "name": ".NET Debug (console)",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build",
+            "preLaunchTask": "build-debug",
             // ターゲット フレームワークを変更した場合は、プログラム パスを更新するようにしてください。
-            "program": "${workspaceFolder}/SpineScreenshotCli/bin/Debug/net9.0/osx-x64/SpineScreenshotCli.dll",
-            "args": [],
+            "program": "${workspaceFolder}/SpineScreenshotCli/bin/Debug/net9.0/SpineScreenshotCli.dll",
+            "args": [
+                "--atlas", "../example2/prc/class_1805.atlas"
+                , "--skel", "../example2/prc/class_1805.json"
+                , "--out-dir", "./out"
+                , "--out", "_ATLASNAME_-_SKIN_-_ANIME_-_FRAME_.webp"
+                , "--position", "960,520"
+                , "--size", "1024,1024"
+                , "--skin", "default"
+                , "--animation", "all"
+                , "--frame", "30"
+                , "--premultiplied-alpha"
+                , "--use-alpha"
+            ],
             "cwd": "${workspaceFolder}/SpineScreenshotCli",
             // 'console' フィールドの詳細については、https://aka.ms/VSCode-CS-LaunchJson-Console を参照してください
             "console": "internalConsole",
+            "requireExactSource": true,
             "stopAtEntry": false
         },
         {
-            "name": ".NET Core Attach",
+            "name": ".NET Release (console)",
             "type": "coreclr",
-            "request": "attach"
+            "request": "launch",
+            "preLaunchTask": "build-release",
+            "program": "${workspaceFolder}/SpineScreenshotCli/bin/Debug/net9.0/SpineScreenshotCli.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/SpineScreenshotCli",
+            "stopAtEntry": false,
+            "console": "internalConsole"
         }
     ]
 }
