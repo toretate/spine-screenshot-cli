@@ -111,7 +111,10 @@ for SPINE_VERSION in "${SPINE_VERSIONS[@]}"; do
     echo ""
     echo "Building Spine $SPINE_VERSION version..."
     echo "========================================"
-    
+
+    # DefineConstantsをSpineバージョンから自動生成
+    DEFINE_CONSTANTS="SPINE_${SPINE_VERSION//./_}"
+
     for RID in "${RIDS[@]}"; do
         echo "Publishing Spine $SPINE_VERSION for $RID..."
 
@@ -123,7 +126,8 @@ for SPINE_VERSION in "${SPINE_VERSIONS[@]}"; do
             /p:PublishTrimmed=false \
             /p:Version="$VERSION" \
             /p:InformationalVersion="$VERSION_TAG" \
-            /p:SpineVersion="$SPINE_VERSION"
+            /p:SpineVersion="$SPINE_VERSION" \
+            /p:DefineConstants="$DEFINE_CONSTANTS"
 
         PUBLISH_DIR="$OUTPUT_ROOT/$RID/publish"
         ZIP_NAME="SpineScreenshotCli-$SPINE_VERSION-$RID.zip"

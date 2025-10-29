@@ -1,9 +1,9 @@
 #!/bin/bash
+BASE="../SpineExamples/3.8/examples"
+SKEL="${BASE}/spineboy/export/spineboy-pro.skel"
+ATLAS="${BASE}/spineboy/export/spineboy.atlas"
 
-SKEL="../spine-runtimes/examples/spineboy/export/spineboy.atlas"
-ATLAS="../spine-runtimes/examples/spineboy/export/spineboy-pro.skel"
-
-  dotnet run \
+dotnet run -p:DefineConstants="SPINE_3_8"  \
   --skel $SKEL \
   --atlas $ATLAS \
   --skin all \
