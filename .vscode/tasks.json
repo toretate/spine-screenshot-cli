@@ -2,11 +2,27 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build",
+            "label": "build-debug",
             "command": "dotnet",
             "type": "process",
             "args": [
                 "build",
+                "-c",
+                "Debug",
+                "${workspaceFolder}/SpineScreenshotCli/SpineScreenshotCli.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary;ForceNoAlign"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build-release",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "-c",
+                "Release",
                 "${workspaceFolder}/SpineScreenshotCli/SpineScreenshotCli.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"

@@ -16,11 +16,17 @@ public class Options
     [Option("animation", Required = false, HelpText = "Animation name to render (use 'all' to render all animations)")]
     public string? Animation { get; set; }
 
-    [Option("frame", Required = false, Default = 0, HelpText = "Frame number to capture (0-based)")]
-    public int Frame { get; set; }
-
     [Option("fps", Required = false, Default = 30.0f, HelpText = "Frame rate (deafult 30)")]
     public float Fps { get; set; }
+
+    [Option("frame", Required = false, Default = 0, HelpText = "Frame number to capture (1-based)")]
+    public int Frame { get; set; }
+
+    [Option("range", Required = false, Default = 0, HelpText = "Animation range from frame")]
+    public int Range { get; set; }
+
+    [Option("interval", Required = false, Default = 1, HelpText = "Animation capture interval")]
+    public int Interval { get; set; }
 
     [Option("position", Required = false, HelpText = "Position as 'x,y' (default: center)")]
     public string? Position { get; set; }
@@ -43,8 +49,8 @@ public class Options
     [Option("premultiplied-alpha", Required = false, Default = false, HelpText = "Use premultiplied alpha blending (default: false)")]
     public bool PremultipliedAlpha { get; set; } = false;
 
-    [Option("use-alpha", Required = false, HelpText = "Enable alpha channel processing (SpineUseAlpha, default: true)")]
-    public bool UseAlpha { get; set; }
+    [Option("use-alpha", Required = false, Default = false, HelpText = "Enable alpha channel processing (SpineUseAlpha, default: false)")]
+    public bool UseAlpha { get; set; } = false;
 
     [Option("background", Required = false, HelpText = "Background color in RRGGBB format (default: transparent)")]
     public string? BackgroundColor { get; set; }

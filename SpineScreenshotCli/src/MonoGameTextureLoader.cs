@@ -1,5 +1,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Spine;
+using System;
+using System.IO;
 
 namespace SpineScreenshotCli;
 

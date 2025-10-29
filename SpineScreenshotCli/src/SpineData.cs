@@ -1,7 +1,11 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Spine;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Formats.Webp;
@@ -127,7 +131,9 @@ public static class SpineData
         
         if (extension == ".json")
         {
+            Console.WriteLine("Using SkeletonJson to read skeleton data.");
             var json = new SkeletonJson(atlas);
+            Console.WriteLine("Using SkeletonJson to complete skeleton data.");
             return json.ReadSkeletonData(skeletonPath);
         }
         else if (extension == ".skel" || extension == ".skel.bytes" || extension == ".skel.txt")

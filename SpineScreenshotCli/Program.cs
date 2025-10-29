@@ -1,27 +1,17 @@
 ﻿using CommandLine;
 using CommandLine.Text;
 using SpineScreenshotCli;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using System;
+using System.Collections.Generic;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Manual detection of --use-alpha=false due to CommandLine parser bug
-        bool useAlphaFromArgs = true; // Default to true unless explicitly set to false
-        for (int i = 0; i < args.Length; i++)
-        {
-            if (args[i] == "--use-alpha=false")
-            {
-                useAlphaFromArgs = false;
-                break;
-            }
-        }
-
         Parser.Default.ParseArguments<Options>(args)
             .WithParsed<Options>(opts => {
-                // Override UseAlpha with manual detection result
-                opts.UseAlpha = useAlphaFromArgs;
-                
                 RunWithOptions(opts);
             })
             .WithNotParsed<Options>(errs => HandleParseError(errs));
@@ -29,18 +19,42 @@ class Program
 
     static void RunWithOptions(Options options)
     {
+        Global.isNew = true;
         try
         {
+            var privateImpl = false;
             if (options.ShowInfo)
             {
                 var info = SpineFileInfo.Load(options);
                 info.Show();
             }
-            else
+#if SPINE_3_6
+            else if(privateImpl)
             {
                 var renderer = new SpineRenderer_3_6(options);
                 renderer.Render();
+            } else
+            {
+                // Spine 3.6 処理をここに追加
+                Console.Error.WriteLine("Spine 3.6 support not implemented yet.");
+                Environment.Exit(1);
             }
+#elif SPINE_3_8
+            else
+            {
+                Global.Initialize(options);
+                var player = new SpinePlayer_3_8();
+                player.Initialize();
+                player.LoadContent(options);
+                player.Render(options);
+            }
+#else
+            else
+            {
+                Console.Error.WriteLine("No Spine version specified. Use -p:SpineVersion=3.6 or -p:SpineVersion=3.8");
+                Environment.Exit(1);
+            }
+#endif
         }
         catch (Exception ex)
         {
