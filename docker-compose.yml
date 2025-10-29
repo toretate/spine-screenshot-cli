@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # GitHub Actions をローカル実行するための act サービス
+  github-actions-runner:
+    image: ghcr.io/catthehacker/ubuntu-act-22.04:latest
+    container_name: spine-cli-actions-runner
+    volumes:
+      - .:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /workspace
+    environment:
+      - DOTNET_ROOT=/usr/share/dotnet
+      - PATH=/usr/share/dotnet:$PATH
+    networks:
+      - spine-cli-network
+    command: tail -f /dev/null  # コンテナを起動状態に保つ
+
+  # .NET 9 開発環境
+  dotnet-dev:
+    image: mcr.microsoft.com/dotnet/sdk:9.0
+    container_name: spine-cli-dotnet-dev
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    environment:
+      - DOTNET_CLI_TELEMETRY_OPTOUT=1
+      - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+    networks:
+      - spine-cli-network
+    command: tail -f /dev/null
+
+  # GitHub Actions ローカル実行用の act ツール
+  act-runner:
+    image: ghcr.io/catthehacker/ubuntu-act-22.04:latest
+    container_name: spine-cli-act-runner
+    volumes:
+      - .:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.actrc:/root/.actrc:ro  # act設定ファイル
+    working_dir: /workspace
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - GITHUB_REPOSITORY=toretate/spine-screenshot-cli
+      - GITHUB_ACTOR=${GITHUB_ACTOR:-testuser}
+    networks:
+      - spine-cli-network
+    profiles:
+      - act  # docker-compose --profile act up で起動
+
+networks:
+  spine-cli-network:
+    driver: bridge
+
+volumes:
+  dotnet-packages:
+    driver: local
