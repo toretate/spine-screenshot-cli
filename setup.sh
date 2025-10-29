@@ -19,7 +19,7 @@ SPINE_LIBRARIES_DIR="${SCRIPT_DIR}/SpineLibraries"
 SPINE_EXAMPLES_DIR="${SCRIPT_DIR}/SpineExamples"
 
 # 対象バージョン
-VERSIONS=("3.6.32" "3.6.39" "3.6.53")
+VERSIONS=("3.6" "3.8")
 
 echo "=== Spine Runtimes Environment Setup ==="
 
@@ -94,6 +94,35 @@ cd "${SCRIPT_DIR}"
 echo "Removing SkeletonDebugRenderer.cs files..."
 find "${SPINE_LIBRARIES_DIR}" -name "SkeletonDebugRenderer.cs" -type f -delete
 echo "  Removed all SkeletonDebugRenderer.cs files"
+
+# Util.cs の削除
+echo "Removing Util.cs files..."
+find "${SPINE_LIBRARIES_DIR}" -name "Util.cs" -type f -delete
+echo "  Removed all Util.cs files"
+
+# .NET 9 OrderedDictionary 曖昧性修正
+echo "Fixing OrderedDictionary ambiguity for .NET 9..."
+for version in "${VERSIONS[@]}"; do
+    version_dir="${SPINE_LIBRARIES_DIR}/${version}"
+    
+    if [ -d "${version_dir}" ]; then
+        # 全てのSkin.csファイルでOrderedDictionaryを完全修飾名に置換
+        find "${version_dir}" -name "Skin.cs" -type f | while read -r skin_file; do
+            if grep -q "OrderedDictionary<" "${skin_file}" 2>/dev/null; then
+                # 安全な一時ファイル処理
+                temp_file=$(mktemp)
+                LC_ALL=C sed "s/private OrderedDictionary</private Spine.Collections.OrderedDictionary</g" "${skin_file}" | \
+                LC_ALL=C sed "s/public OrderedDictionary</public Spine.Collections.OrderedDictionary</g" | \
+                LC_ALL=C sed "s/new OrderedDictionary</new Spine.Collections.OrderedDictionary</g" > "${temp_file}"
+                mv "${temp_file}" "${skin_file}"
+            fi
+        done
+        
+        echo "  Fixed OrderedDictionary ambiguity in ${version_dir}"
+    fi
+done
+
+
 
 echo "=== Setup completed ==="
 echo "Libraries: ${SPINE_LIBRARIES_DIR}"

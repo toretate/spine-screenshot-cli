@@ -8,11 +8,26 @@
     <Nullable>enable</Nullable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     
+    <!-- Spine version selection (default: 3.8) -->
+    <SpineVersion Condition="'$(SpineVersion)' == ''">3.8</SpineVersion>
+    
+    <!-- Version information -->
+    <Version>0.1.0</Version>
+    <AppVersion>$(Version)</AppVersion>
+    <InformationalVersion>$(Version)</InformationalVersion>
+    
+    <!-- Version-specific compilation constants -->
+    <DefineConstants>$(DefineConstants);SPINE_$(SpineVersion.Replace('.', '_'))</DefineConstants>
+    
+    <!-- Version-specific assembly name with app version -->
+    <AssemblyName>SpineScreenshotCli-$(SpineVersion.Replace('.', '_'))-v$(AppVersion.Replace('.', '_'))</AssemblyName>
+    
     <!-- Release build settings -->
     <AssemblyTitle>Spine Screenshot CLI</AssemblyTitle>
     <AssemblyDescription>Command-line tool for capturing screenshots from Spine animations</AssemblyDescription>
     <AssemblyCompany>toretate</AssemblyCompany>
     <AssemblyProduct>spine-screenshot-cli</AssemblyProduct>
+    <!-- AssemblyVersionは数値のみ（プレリリース版に対応するため固定） -->
     <AssemblyVersion>0.1.0.0</AssemblyVersion>
     <FileVersion>0.1.0.0</FileVersion>
     <Copyright>Copyright © 2025</Copyright>
@@ -24,7 +39,6 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -33,6 +47,10 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+
+  <!-- OS-specific RuntimeIdentifier for Debug builds (automatic detection) -->
+  <!-- Note: For Debug builds, RuntimeIdentifier is automatically detected by .NET SDK -->
+  <!-- This provides better cross-platform development experience -->
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <!-- Performance optimizations -->
@@ -43,8 +61,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PublishSingleFile>true</PublishSingleFile>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
+    <!-- Framework-dependent deployment settings -->
+    <SelfContained>false</SelfContained>
     <!-- Disable aggressive trimming for compatibility -->
     <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
@@ -59,17 +78,23 @@
   <ItemGroup>
     <Compile Include="Options.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="src\**\*.cs" />
 
-    <!-- Include spine-xna 3.6.39 renderer files -->
-    <Compile Include="..\SpineLibraries\3.8\spine-csharp\**\*.cs">
+    <!-- Spine libraries (version-agnostic) -->
+    <Compile Include="..\SpineLibraries\$(SpineVersion)\spine-csharp\**\*.cs">
       <WarningLevel>0</WarningLevel>
       <NoWarn>$(NoWarn);CS0618;CS0619;CS0612;CS1591;CS8602;CS8604;CS8618;CS8625;CS8600;CS8603;CS8601;CS8605;CS0649</NoWarn>
     </Compile>
-    <Compile Include="..\SpineLibraries\3.8\spine-xna\**\*.cs" LinkBase="SpineXna">
+    <Compile Include="..\SpineLibraries\$(SpineVersion)\spine-xna\**\*.cs" LinkBase="SpineXna">
       <WarningLevel>0</WarningLevel>
       <NoWarn>$(NoWarn);CS0618;CS0619;CS0612;CS1591;CS8602;CS8604;CS8618;CS8625;CS8600;CS8603;CS8601;CS8605;CS0649</NoWarn>
     </Compile>
+    
+    <!-- Version-specific source files -->
+    <Compile Include="src\SpineRenderer_3_6.cs" Condition="'$(SpineVersion)' == '3.6'" />
+    <Compile Include="src\SpinePlayer_3_8.cs" Condition="'$(SpineVersion)' == '3.8'" />
+    
+    <!-- Common source files (excluding version-specific files) -->
+    <Compile Include="src\**\*.cs" Exclude="src\SpineRenderer_3_6.cs;src\SpinePlayer_3_8.cs" />
   </ItemGroup>
 
 </Project>

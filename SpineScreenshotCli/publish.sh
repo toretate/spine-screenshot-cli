@@ -43,7 +43,7 @@ done
 
 # バージョンタグが指定されていない場合、csprojから取得してユーザーに確認
 if [[ -z "$VERSION_TAG" ]]; then
-    echo "🔍 Version not specified. Reading from project file..."
+    echo "Version not specified. Reading from project file..."
     
     # csprojファイルからVersionを取得
     CSPROJ_VERSION=""
@@ -64,9 +64,9 @@ if [[ -z "$VERSION_TAG" ]]; then
     # デフォルトバージョンの設定
     if [[ -z "$CSPROJ_VERSION" ]]; then
         CSPROJ_VERSION="1.0.0"
-        echo "⚠️  No version found in project file. Using default: $CSPROJ_VERSION"
+        echo "WARNING: No version found in project file. Using default: $CSPROJ_VERSION"
     else
-        echo "📋 Found version in project file: $CSPROJ_VERSION"
+        echo "Found version in project file: $CSPROJ_VERSION"
     fi
     
     # vプレフィックスを追加（まだ付いていない場合）
@@ -91,7 +91,7 @@ if [[ -z "$VERSION_TAG" ]]; then
         VERSION_TAG="v$VERSION_TAG"
     fi
     
-    echo "✅ Using version: $VERSION_TAG"
+    echo "Using version: $VERSION_TAG"
     echo ""
 fi
 
@@ -100,61 +100,85 @@ VERSION="${VERSION_TAG#v}"
 
 # 出力ルート（このスクリプトからの相対パス）
 OUTPUT_ROOT="./bin/Release/net9.0"
+ARTIFACTS_DIR="./artifacts"
 RIDS=("win-x64" "win-arm64" "linux-x64" "osx-x64" "osx-arm64")
+SPINE_VERSIONS=("3.6" "3.8")
 
-for RID in "${RIDS[@]}"; do
-    echo "📦 Publishing for $RID..."
+# アーティファクトディレクトリを作成
+mkdir -p "$ARTIFACTS_DIR"
 
-    dotnet publish "$PROJECT_PATH" \
-        -c Release \
-        -r "$RID" \
-        --self-contained false \
-        /p:PublishSingleFile=true \
-        /p:PublishTrimmed=false \
-        /p:IncludeNativeLibrariesForSelfExtract=true \
-        /p:Version="$VERSION" \
-        /p:InformationalVersion="$VERSION_TAG"
-
-    PUBLISH_DIR="$OUTPUT_ROOT/$RID/publish"
-    ZIP_NAME="SpineScreenshotCli-$RID.zip"
-    ZIP_PATH="$PUBLISH_DIR/$ZIP_NAME"
-
-    echo "🗜️ Compressing $ZIP_NAME (excluding debug/config files)..."
-
-    # 除外対象の拡張子
-    EXCLUDED_EXTENSIONS=(".pdb" ".xml" ".json" ".dll" ".deps.json" ".runtimeconfig.json")
-
-    # 一時ディレクトリを作成してファイルをコピー
-    TEMP_DIR=$(mktemp -d)
+for SPINE_VERSION in "${SPINE_VERSIONS[@]}"; do
+    echo ""
+    echo "Building Spine $SPINE_VERSION version..."
+    echo "========================================"
     
-    # 対象ファイルをフィルタリングしてコピー
-    for FILE in "$PUBLISH_DIR"/*; do
-        if [[ -f "$FILE" ]]; then
-            FILENAME=$(basename "$FILE")
-            EXTENSION="${FILENAME##*.}"
-            
-            # 拡張子をチェック（ドットを追加して比較）
-            SHOULD_EXCLUDE=false
-            for EXT in "${EXCLUDED_EXTENSIONS[@]}"; do
-                if [[ ".$EXTENSION" == "$EXT" ]]; then
-                    SHOULD_EXCLUDE=true
-                    break
+    for RID in "${RIDS[@]}"; do
+        echo "Publishing Spine $SPINE_VERSION for $RID..."
+
+        dotnet publish "$PROJECT_PATH" \
+            -c Release \
+            -r "$RID" \
+            --self-contained false \
+            /p:PublishSingleFile=true \
+            /p:PublishTrimmed=false \
+            /p:Version="$VERSION" \
+            /p:InformationalVersion="$VERSION_TAG" \
+            /p:SpineVersion="$SPINE_VERSION"
+
+        PUBLISH_DIR="$OUTPUT_ROOT/$RID/publish"
+        ZIP_NAME="SpineScreenshotCli-$SPINE_VERSION-$RID.zip"
+        ZIP_PATH="$(pwd)/$ARTIFACTS_DIR/$ZIP_NAME"
+
+        echo "Compressing $ZIP_NAME (excluding debug files)..."
+
+        # 除外対象の拡張子（framework-dependentビルドではデバッグファイルのみ除外）
+        EXCLUDED_EXTENSIONS=(".pdb" ".xml")
+
+        # 一時ディレクトリを作成してファイルをコピー
+        TEMP_DIR=$(mktemp -d)
+        
+        # 対象ファイルをフィルタリングしてコピー
+        for FILE in "$PUBLISH_DIR"/*; do
+            if [[ -f "$FILE" ]]; then
+                FILENAME=$(basename "$FILE")
+                EXTENSION="${FILENAME##*.}"
+                
+                # 拡張子をチェック（ドットを追加して比較）
+                SHOULD_EXCLUDE=false
+                for EXT in "${EXCLUDED_EXTENSIONS[@]}"; do
+                    if [[ ".$EXTENSION" == "$EXT" ]]; then
+                        SHOULD_EXCLUDE=true
+                        break
+                    fi
+                done
+                
+                # 除外対象でない場合はコピー
+                if [[ "$SHOULD_EXCLUDE" == false ]]; then
+                    cp "$FILE" "$TEMP_DIR/"
                 fi
-            done
-            
-            # 除外対象でない場合はコピー
-            if [[ "$SHOULD_EXCLUDE" == false ]]; then
-                cp "$FILE" "$TEMP_DIR/"
             fi
-        fi
-    done
+        done
 
-    # zipファイルを作成
-    (cd "$TEMP_DIR" && zip -r "$ZIP_PATH" .)
+        # zipファイルを作成
+        (cd "$TEMP_DIR" && zip -r "$ZIP_PATH" .)
+        
+        # 一時ディレクトリを削除
+        rm -rf "$TEMP_DIR"
+    done
     
-    # 一時ディレクトリを削除
-    rm -rf "$TEMP_DIR"
+    echo "Spine $SPINE_VERSION builds completed."
 done
 
 echo ""
-echo "✅ All targets published and zipped successfully."
+echo "All Spine versions and targets published and zipped successfully."
+echo ""
+echo "📦 Artifacts location: $ARTIFACTS_DIR/"
+echo ""
+echo "Published versions:"
+echo "   - Spine 3.6: SpineScreenshotCli-3.6-[platform].zip"
+echo "   - Spine 3.8: SpineScreenshotCli-3.8-[platform].zip"
+echo ""
+echo "Platforms: win-x64, win-arm64, linux-x64, osx-x64, osx-arm64"
+echo ""
+echo "📁 Available artifacts:"
+ls -la "$ARTIFACTS_DIR"/*.zip 2>/dev/null || echo "   (No zip files found)"

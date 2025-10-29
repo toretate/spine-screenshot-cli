@@ -11,16 +11,12 @@ permissions:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rid: [win-x64, win-arm64, linux-x64, osx-x64, osx-arm64]
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-
-      - name: Clone spine-runtimes (branch 3.6)
-        run: git clone --branch 3.6 https://github.com/EsotericSoftware/spine-runtimes.git spine-runtimes
+        with:
+          submodules: recursive
 
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
@@ -33,30 +29,21 @@ jobs:
           echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           echo "clean_version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Restore dependencies
-        run: dotnet restore SpineScreenshotCli/SpineScreenshotCli.csproj
-
-      - name: Publish CLI for ${{ matrix.rid }}
+      - name: Setup Spine libraries
         run: |
-          dotnet publish ./SpineScreenshotCli/SpineScreenshotCli.csproj \
-            -c Release \
-            -r ${{ matrix.rid }} \
-            --self-contained false \
-            /p:PublishSingleFile=true \
-            /p:PublishTrimmed=false \
-            /p:IncludeNativeLibrariesForSelfExtract=true \
-            /p:Version=${{ steps.extract_version.outputs.clean_version }} \
-            /p:InformationalVersion=${{ steps.extract_version.outputs.version }}
+          chmod +x setup.sh
+          ./setup.sh
 
-      - name: Compress binary
+      - name: Build and package all versions
         run: |
-          cd SpineScreenshotCli/bin/Release/net9.0/${{ matrix.rid }}/publish
-          zip -r SpineScreenshotCli-${{ matrix.rid }}.zip * -x "*.pdb"
+          cd SpineScreenshotCli
+          chmod +x publish.sh
+          ./publish.sh --version ${{ steps.extract_version.outputs.version }}
 
-      - name: Upload binary to GitHub Release
+      - name: Upload all binaries to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            SpineScreenshotCli/bin/Release/net9.0/${{ matrix.rid }}/publish/*
+            SpineScreenshotCli/artifacts/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

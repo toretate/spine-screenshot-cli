@@ -28,19 +28,33 @@ class Program
                 var info = SpineFileInfo.Load(options);
                 info.Show();
             }
+#if SPINE_3_6
             else if(privateImpl)
             {
                 var renderer = new SpineRenderer_3_6(options);
                 renderer.Render();
             } else
             {
+                // Spine 3.6 処理をここに追加
+                Console.Error.WriteLine("Spine 3.6 support not implemented yet.");
+                Environment.Exit(1);
+            }
+#elif SPINE_3_8
+            else
+            {
                 Global.Initialize(options);
-                var player = new Spine_3_8.SpinePlayer_3_8();
+                var player = new SpinePlayer_3_8();
                 player.Initialize();
                 player.LoadContent(options);
                 player.Render(options);
-                
             }
+#else
+            else
+            {
+                Console.Error.WriteLine("No Spine version specified. Use -p:SpineVersion=3.6 or -p:SpineVersion=3.8");
+                Environment.Exit(1);
+            }
+#endif
         }
         catch (Exception ex)
         {

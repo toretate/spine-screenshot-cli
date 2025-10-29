@@ -8,9 +8,7 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Spine;
 
-using SpineScreenshotCli;
-
-namespace Spine_3_8;
+namespace SpineScreenshotCli;
 
 public class SpinePlayer_3_8
 {
