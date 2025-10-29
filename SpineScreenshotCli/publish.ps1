@@ -113,8 +113,14 @@ foreach ($SPINE_VERSION in $SPINE_VERSIONS) {
     Write-Host "Building Spine $SPINE_VERSION version..."
     Write-Host "========================================"
     
+    # DefineConstantsをSpineバージョンから自動生成
+    $DEFINE_CONSTANTS = "SPINE_$($SPINE_VERSION -replace '\.', '_')"
+
     foreach ($RID in $RIDS) {
         Write-Host "Publishing Spine $SPINE_VERSION for $RID..."
+
+        # Spineバージョンごとに出力ディレクトリを分ける
+        $PUBLISH_DIR = "$OUTPUT_ROOT/$SPINE_VERSION/$RID/publish"
 
         & dotnet publish $PROJECT_PATH `
             -c Release `
@@ -125,9 +131,10 @@ foreach ($SPINE_VERSION in $SPINE_VERSIONS) {
             /p:IncludeNativeLibrariesForSelfExtract=true `
             /p:Version="$VERSION" `
             /p:InformationalVersion="$VERSION_TAG" `
-            /p:SpineVersion="$SPINE_VERSION"
+            /p:SpineVersion="$SPINE_VERSION" `
+            /p:DefineConstants="$DEFINE_CONSTANTS" `
+            -o $PUBLISH_DIR
 
-        $PUBLISH_DIR = "$OUTPUT_ROOT/$RID/publish"
         $ZIP_NAME = "SpineScreenshotCli-$SPINE_VERSION-$RID.zip"
         $ZIP_PATH = Join-Path (Get-Location) "$ARTIFACTS_DIR/$ZIP_NAME"
 
@@ -137,7 +144,7 @@ foreach ($SPINE_VERSION in $SPINE_VERSIONS) {
         $EXCLUDED_EXTENSIONS = @(".pdb", ".xml", ".json", ".dll", ".deps.json", ".runtimeconfig.json")
 
         # 一時ディレクトリを作成
-        $TEMP_DIR = [System.IO.Path]::GetTempPath() + [System.Guid]::NewGuid().ToString()
+        $TEMP_DIR = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), [System.Guid]::NewGuid().ToString())
         New-Item -ItemType Directory -Path $TEMP_DIR -Force | Out-Null
         
         try {
@@ -160,6 +167,19 @@ foreach ($SPINE_VERSION in $SPINE_VERSIONS) {
                 if (-not $SHOULD_EXCLUDE) {
                     Copy-Item -Path $FILE.FullName -Destination $TEMP_DIR -Force
                 }
+            }
+
+            # メイン実行ファイルをリネーム
+            if ($RID -like "win-*") {
+                $EXECUTABLE_NAME = "SpineScreenshotCli.exe"
+                $RENAMED_EXECUTABLE = "SpineScreenshotCli-$SPINE_VERSION-$($VERSION_TAG -replace '\.', '_').exe"
+            } else {
+                $EXECUTABLE_NAME = "SpineScreenshotCli"
+                $RENAMED_EXECUTABLE = "SpineScreenshotCli-$SPINE_VERSION-$($VERSION_TAG -replace '\.', '_')"
+            }
+            $EXEC_PATH = Join-Path $TEMP_DIR $EXECUTABLE_NAME
+            if (Test-Path $EXEC_PATH) {
+                Rename-Item -Path $EXEC_PATH -NewName $RENAMED_EXECUTABLE
             }
 
             # zipファイルを作成

@@ -118,6 +118,9 @@ for SPINE_VERSION in "${SPINE_VERSIONS[@]}"; do
     for RID in "${RIDS[@]}"; do
         echo "Publishing Spine $SPINE_VERSION for $RID..."
 
+        # Spineバージョンごとに出力ディレクトリを分ける
+        PUBLISH_DIR="$OUTPUT_ROOT/$SPINE_VERSION/$RID/publish"
+
         dotnet publish "$PROJECT_PATH" \
             -c Release \
             -r "$RID" \
@@ -127,9 +130,9 @@ for SPINE_VERSION in "${SPINE_VERSIONS[@]}"; do
             /p:Version="$VERSION" \
             /p:InformationalVersion="$VERSION_TAG" \
             /p:SpineVersion="$SPINE_VERSION" \
-            /p:DefineConstants="$DEFINE_CONSTANTS"
+            /p:DefineConstants="$DEFINE_CONSTANTS" \
+            -o "$PUBLISH_DIR"
 
-        PUBLISH_DIR="$OUTPUT_ROOT/$RID/publish"
         ZIP_NAME="SpineScreenshotCli-$SPINE_VERSION-$RID.zip"
         ZIP_PATH="$(pwd)/$ARTIFACTS_DIR/$ZIP_NAME"
 
@@ -162,6 +165,19 @@ for SPINE_VERSION in "${SPINE_VERSIONS[@]}"; do
                 fi
             fi
         done
+
+        # メイン実行ファイルをリネーム
+        # RIDによって拡張子を付与
+        if [[ "$RID" == win-* ]]; then
+            EXECUTABLE_NAME="SpineScreenshotCli.exe"
+            RENAMED_EXECUTABLE="SpineScreenshotCli-$SPINE_VERSION-${VERSION_TAG//./_}.exe"
+        else
+            EXECUTABLE_NAME="SpineScreenshotCli"
+            RENAMED_EXECUTABLE="SpineScreenshotCli-$SPINE_VERSION-${VERSION_TAG//./_}"
+        fi
+        if [[ -f "$TEMP_DIR/$EXECUTABLE_NAME" ]]; then
+            mv "$TEMP_DIR/$EXECUTABLE_NAME" "$TEMP_DIR/$RENAMED_EXECUTABLE"
+        fi
 
         # zipファイルを作成
         (cd "$TEMP_DIR" && zip -r "$ZIP_PATH" .)

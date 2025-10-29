@@ -151,6 +151,27 @@ do {
             Get-ChildItem -Path $SPINE_LIBRARIES_DIR -Filter "Util.cs" -Recurse | Remove-Item -Force
             Write-Host "  Removed all Utils.cs files" -ForegroundColor Gray
 
+            # .NET 9 OrderedDictionary 曖昧性修正
+            Write-Host "Fixing OrderedDictionary ambiguity for .NET 9..." -ForegroundColor Yellow
+            foreach ($version in $VERSIONS) {
+                $version_dir = Join-Path $SPINE_LIBRARIES_DIR $version
+                if (Test-Path $version_dir) {
+                    # 全てのSkin.csファイルでOrderedDictionaryを完全修飾名に置換
+                    Get-ChildItem -Path $version_dir -Filter "Skin.cs" -Recurse | ForEach-Object {
+                        $skin_file = $_.FullName
+                        $content = Get-Content $skin_file -Raw
+                        $newContent = $content `
+                            -replace "private OrderedDictionary<", "private Spine.Collections.OrderedDictionary<" `
+                            -replace "public OrderedDictionary<", "public Spine.Collections.OrderedDictionary<" `
+                            -replace "new OrderedDictionary<", "new Spine.Collections.OrderedDictionary<"
+                        if ($content -ne $newContent) {
+                            Set-Content $skin_file $newContent
+                            Write-Host "  Fixed OrderedDictionary ambiguity in $skin_file" -ForegroundColor Gray
+                        }
+                    }
+                }
+            }
+
             Pop-Location # 元のディレクトリに戻る
         }
         3 {
