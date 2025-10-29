@@ -30,28 +30,41 @@ echo "=== Spine Runtimes Environment Setup ==="
 mkdir -p "${EXTERNAL_DIR}"
 
 # サブモジュールの初期化・更新
-# if [ ! -d "${SPINE_RUNTIMES_DIR}/.git" ]; then
-#     echo "Initializing spine-runtimes submodule..."
-#     git submodule update --init --recursive
-    
-#     if [ ! -d "${SPINE_RUNTIMES_DIR}/.git" ]; then
-#         echo "ERROR: Failed to initialize submodule. Please check if .gitmodules exists."
-#         exit 1
-#     fi
-# else
+echo "Checking submodule status..."
+
+# submoduleが初期化されているかチェック
+if ! git submodule status external/spine-runtimes | grep -q '^[[:space:]]*[^-]'; then
+    echo "Initializing spine-runtimes submodule..."
+    git submodule update --init --recursive external/spine-runtimes
+else
     echo "Updating spine-runtimes submodule..."
-    git submodule update --recursive
-# fi
+    git submodule update --recursive external/spine-runtimes
+fi
+
+# 最終確認
+if [ ! -e "${SPINE_RUNTIMES_DIR}/.git" ]; then
+    echo "ERROR: Failed to initialize submodule. Please check if .gitmodules exists."
+    exit 1
+fi
 
 # 作業ディレクトリに移動
 cd "${SPINE_RUNTIMES_DIR}"
+
+# リモートブランチを取得
+echo "Fetching all remote branches..."
+git fetch --all
 
 # 各バージョンのセットアップ
 for version in "${VERSIONS[@]}"; do
     echo "Setting up version ${version}..."
     
-    # バージョンをチェックアウト
-    git checkout "${version}"
+    # バージョンブランチの存在確認とチェックアウト
+    if git show-ref --verify --quiet refs/heads/"${version}" || git show-ref --verify --quiet refs/remotes/origin/"${version}"; then
+        git checkout "${version}" 2>/dev/null || git checkout -b "${version}" "origin/${version}"
+    else
+        echo "WARNING: Branch ${version} does not exist. Skipping..."
+        continue
+    fi
     
     # ライブラリディレクトリの作成とコピー
     version_lib_dir="${SPINE_LIBRARIES_DIR}/${version}"
